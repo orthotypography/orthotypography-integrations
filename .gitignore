@@ -1,2 +1,3 @@
 npm/
 *.tgz
+packages/editor-sdk/live-report.json

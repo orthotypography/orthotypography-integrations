@@ -3,13 +3,20 @@
  * proposals, and the REST transport.
  *
  * Run it on a throwaway document whose title starts with
- * `orthotypography-live-check` and whose body is one empty paragraph:
+ * `orthotypography-live-check` and whose body is one empty paragraph, from
+ * `packages/editor-sdk`:
  *
- *   GOOGLE_DOCS_DOCUMENT_ID=... GOOGLE_DOCS_ACCESS_TOKEN=... deno task live:rest
+ *   ./live/run.sh
+ *
+ * The runner prompts for the document URL or ID and, without echoing it, for
+ * an access token with the `https://www.googleapis.com/auth/documents` scope.
+ * `deno task live:rest` runs the script directly with the same variables,
+ * `GOOGLE_DOCS_DOCUMENT_ID` and `GOOGLE_DOCS_ACCESS_TOKEN`.
  *
  * The access token is supplied by the caller, as a host application would; the
- * script never prints, stores, or refreshes it. The JSON report on stdout
- * contains no document ID, revision ID, or token; progress goes to stderr.
+ * script never prints, stores, or refreshes it. The JSON report, written to
+ * `live-report.json` and stdout, contains no document ID, revision ID, or
+ * token; progress goes to stderr.
  */
 import {
   IMPRIMERIE_NATIONALE_RULES as rules,
@@ -447,18 +454,48 @@ export async function runLiveCheck(
   };
 }
 
-if (import.meta.main) {
-  const documentId = Deno.env.get("GOOGLE_DOCS_DOCUMENT_ID")?.trim() ?? "";
-  if (documentId === "" || !Deno.env.get("GOOGLE_DOCS_ACCESS_TOKEN")?.trim()) {
-    console.error(
-      "Set GOOGLE_DOCS_DOCUMENT_ID and GOOGLE_DOCS_ACCESS_TOKEN; see the header.",
+/** Accepts a bare document ID or a docs.google.com document URL. */
+export function documentIdFrom(input: string): string {
+  const value = input.trim();
+  const fromUrl = /\/document\/(?:u\/\d+\/)?d\/([A-Za-z0-9_-]+)/.exec(value)
+    ?.[1];
+  const id = fromUrl ?? value;
+  if (!/^[A-Za-z0-9_-]{10,}$/.test(id)) {
+    throw new Error(
+      "GOOGLE_DOCS_DOCUMENT_ID must be a Google Docs document ID or URL",
     );
+  }
+  return id;
+}
+
+/** Report file written next to this package, outside version control. */
+export const REPORT_FILE = "live-report.json";
+
+if (import.meta.main) {
+  const fail = (message: string): never => {
+    console.error(`[live] ${message}`);
     Deno.exit(2);
+  };
+  let documentId = "";
+  try {
+    documentId = documentIdFrom(Deno.env.get("GOOGLE_DOCS_DOCUMENT_ID") ?? "");
+  } catch (error) {
+    fail((error as Error).message);
+  }
+  if (!Deno.env.get("GOOGLE_DOCS_ACCESS_TOKEN")?.trim()) {
+    fail("GOOGLE_DOCS_ACCESS_TOKEN is empty; see the header of this script.");
   }
   const transport = createGoogleDocsRestTransport({
     getAccessToken: () => Deno.env.get("GOOGLE_DOCS_ACCESS_TOKEN") ?? "",
   });
   const report = await runLiveCheck(transport, documentId);
-  console.log(JSON.stringify(report, null, 2));
+  const json = `${JSON.stringify(report, null, 2)}\n`;
+  await Deno.writeTextFile(REPORT_FILE, json);
+  console.log(json);
+  console.error(
+    `[live] ${report.ok ? "passed" : "FAILED"}; report written to ${
+      new URL(REPORT_FILE, `file://${Deno.cwd()}/`).pathname
+    }`,
+  );
   if (!report.ok) Deno.exitCode = 1;
 }

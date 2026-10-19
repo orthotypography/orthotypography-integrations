@@ -1,6 +1,9 @@
 import assert from "node:assert/strict";
 import { createGoogleDocsRestTransport } from "../src/google-docs-rest.ts";
-import { runLiveCheck } from "../live/google_docs_rest_check.ts";
+import {
+  documentIdFrom,
+  runLiveCheck,
+} from "../live/google_docs_rest_check.ts";
 
 type Style = Readonly<Record<string, unknown>>;
 interface Character {
@@ -195,4 +198,21 @@ Deno.test("live check refuses a document that is not a throwaway check document"
     0,
   );
   assert.equal(fake.text(), "\n");
+});
+
+Deno.test("live check accepts a document URL or ID and rejects other input", () => {
+  const id = "1AbCdEfGhIjKlMnOpQrStUvWxYz_0123456789-ab";
+  for (
+    const input of [
+      id,
+      ` ${id}\n`,
+      `https://docs.google.com/document/d/${id}/edit?tab=t.0`,
+      `https://docs.google.com/document/u/1/d/${id}/edit`,
+    ]
+  ) {
+    assert.equal(documentIdFrom(input), id);
+  }
+  for (const input of ["", "<identifiant>", "https://example.com/x"]) {
+    assert.throws(() => documentIdFrom(input), /document ID or URL/);
+  }
 });
