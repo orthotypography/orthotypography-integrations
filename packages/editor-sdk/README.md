@@ -5,9 +5,8 @@ immutable correction plans and validates their complete source before a native
 editor transaction. The module contains no editor API or Deno runtime
 dependency.
 
-This is an alpha release. Its API may change before `1.0.0`. The published
-`0.1.0-alpha.1` uses `@orthotypography/core@0.1.0-alpha.3`. The unreleased
-version described below uses `@orthotypography/core@0.2.0-alpha.0`.
+This is an alpha release. Its API may change before `1.0.0`. It uses
+`@orthotypography/core@0.2.0-alpha.0`.
 
 The package exposes `.` for the neutral contract and `./google-docs` for the
 provider-specific surface. It uses an independent version from the Astro
@@ -24,7 +23,7 @@ npm install @orthotypography/editor-sdk
 With Deno or another JSR client:
 
 ```sh
-deno add jsr:@orthotypography/editor-sdk@0.1.0-alpha.1
+deno add jsr:@orthotypography/editor-sdk@0.2.0-alpha.0
 ```
 
 ## Prepare and validate
