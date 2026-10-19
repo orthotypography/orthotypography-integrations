@@ -8,9 +8,9 @@ for tools across the JavaScript ecosystem.
 
 | Package                       | Status          | Purpose                                      |
 | ----------------------------- | --------------- | -------------------------------------------- |
-| `@orthotypography/rehype`     | `0.1.0-alpha.2` | adapts the core to Unified and rehype        |
-| `@orthotypography/satteri`    | `0.1.0-alpha.2` | adapts the core to native Sätteri HAST hooks |
-| `@orthotypography/astro`      | `0.1.0-alpha.2` | preserves and extends either Astro processor |
+| `@orthotypography/rehype`     | `0.2.0-alpha.0` | adapts the core to Unified and rehype        |
+| `@orthotypography/satteri`    | `0.2.0-alpha.0` | adapts the core to native Sätteri HAST hooks |
+| `@orthotypography/astro`      | `0.2.0-alpha.0` | preserves and extends either Astro processor |
 | `@orthotypography/editor-sdk` | `0.2.0-alpha.0` | prepares guarded native editor transactions  |
 
 The repository is organized as a workspace. Deno provides the development

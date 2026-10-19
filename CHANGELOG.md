@@ -7,33 +7,6 @@ and Astro adapters (`rehype`, `satteri`, and `astro`) share one version and the
 
 ## Unreleased
 
-### Adapters
-
-- Upgrade `rehype`, `satteri`, and `astro` from
-  `@orthotypography/core@0.1.0-alpha.3` to `0.2.0-alpha.0`, after development
-  against core commits of the `0.2` line. Outputs follow the core changes since
-  `0.1.0-alpha.3` listed in the core `CHANGELOG`, notably rules run once per
-  logical run, so constructs split across inline nodes are corrected or
-  protected; the space after `?`, `!`, `:`, and `;` before a closing sign, a
-  comma, or a period is left as the Imprimerie nationale sets it (core issues
-  #54 and #59); and a correct space next to these signs or inside French
-  guillemets is left in its node when inline nodes split around it, instead of
-  being moved or doubled (core issues #63 and #66). Diagnostics also carry the
-  core's `messageId` and `messageArgs`, and core errors are typed
-  `OrthotypographyError`s with a stable `code` (core #65).
-- **Breaking (from the core):** locales are canonicalized (`fr-fr` now selects
-  `fr-FR` rules), and a logical run whose locale no configured rule supports
-  throws instead of passing through unchanged. Check the configured `locale`
-  against the rules.
-- **Breaking:** diagnostics are always located in the source text nodes.
-  `coordinateSpace` and `segmentRevision` are removed from
-  `AdapterDiagnosticLocation`; in `fix` mode, a subject inside text produced by
-  an earlier fix is reported on the source range of that fix. Changes reported
-  through `onChange` and `orthotypographyChanges` carry the core's `id`, unique
-  within one logical run. The adapters still apply every change and do not
-  expose proposal groups.
-- Custom rules follow the core `0.2` rule interface (`apply(run: LogicalRun)`).
-
 ### Repository
 
 - `deno task core:status` reports whether each release lane depends on a
@@ -81,6 +54,37 @@ and Astro adapters (`rehype`, `satteri`, and `astro`) share one version and the
   `dismissed`; `review.preview` and `normalizeGoogleDocsDocument` still cover
   every group.
 - Synthetic test rules follow the core `0.2` rule interface.
+- Report each lane's core dependency with `deno task core:status`; CI runs a
+  lane's JSR dry runs and npm package checks only when it depends on a published
+  core, and `scripts/build_npm.ts` refuses to package a lane pinned to a
+  development core commit.
+
+## Adapters 0.2.0-alpha.0 - 2026-10-19
+
+- Upgrade `rehype`, `satteri`, and `astro` from
+  `@orthotypography/core@0.1.0-alpha.3` to `0.2.0-alpha.0`, after development
+  against core commits of the `0.2` line. Outputs follow the core changes since
+  `0.1.0-alpha.3` listed in the core `CHANGELOG`, notably rules run once per
+  logical run, so constructs split across inline nodes are corrected or
+  protected; the space after `?`, `!`, `:`, and `;` before a closing sign, a
+  comma, or a period is left as the Imprimerie nationale sets it (core issues
+  #54 and #59); and a correct space next to these signs or inside French
+  guillemets is left in its node when inline nodes split around it, instead of
+  being moved or doubled (core issues #63 and #66). Diagnostics also carry the
+  core's `messageId` and `messageArgs`, and core errors are typed
+  `OrthotypographyError`s with a stable `code` (core #65).
+- **Breaking (from the core):** locales are canonicalized (`fr-fr` now selects
+  `fr-FR` rules), and a logical run whose locale no configured rule supports
+  throws instead of passing through unchanged. Check the configured `locale`
+  against the rules.
+- **Breaking:** diagnostics are always located in the source text nodes.
+  `coordinateSpace` and `segmentRevision` are removed from
+  `AdapterDiagnosticLocation`; in `fix` mode, a subject inside text produced by
+  an earlier fix is reported on the source range of that fix. Changes reported
+  through `onChange` and `orthotypographyChanges` carry the core's `id`, unique
+  within one logical run. The adapters still apply every change and do not
+  expose proposal groups.
+- Custom rules follow the core `0.2` rule interface (`apply(run: LogicalRun)`).
 - Report each lane's core dependency with `deno task core:status`; CI runs a
   lane's JSR dry runs and npm package checks only when it depends on a published
   core, and `scripts/build_npm.ts` refuses to package a lane pinned to a
