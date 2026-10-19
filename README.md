@@ -25,7 +25,7 @@ deno task npm:check
 ```
 
 The three content adapters are developed against core commit
-[`82e4cc9`](https://github.com/orthotypography/orthotypography/commit/82e4cc97e3e97dfddc37ec9c1aacc33f07b3d229)
+[`71d23ea`](https://github.com/orthotypography/orthotypography/commit/71d23eacad1a3722f316e65e3821f7fecad437e7)
 of the unreleased `0.2` line; their published `0.1.0-alpha.2` versions use
 `@orthotypography/core@0.1.0-alpha.3`. The independently versioned editor SDK
 uses core `0.1.0-alpha.3`. `deno task core:status` reports each lane's core

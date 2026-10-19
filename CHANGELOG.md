@@ -11,12 +11,13 @@ and Astro adapters (`rehype`, `satteri`, and `astro`) share one version and the
 
 - Develop `rehype`, `satteri`, and `astro` against the unreleased core `0.2`
   line, pinned to commit
-  [`82e4cc9`](https://github.com/orthotypography/orthotypography/commit/82e4cc97e3e97dfddc37ec9c1aacc33f07b3d229)
-  (core `main` after its pull request #56). Outputs follow the core changes
+  [`71d23ea`](https://github.com/orthotypography/orthotypography/commit/71d23eacad1a3722f316e65e3821f7fecad437e7)
+  (core `main` after its pull request #58). Outputs follow the core changes
   since `0.1.0-alpha.3` listed in the core `CHANGELOG`, notably rules run once
   per logical run, so constructs split across inline nodes are corrected or
-  protected. The adapters cannot be released on this commit; they move to the
-  published core `0.2` in a later change.
+  protected, and the space after `?`, `!`, `:`, and `;` before a closing sign is
+  left to that sign's rule (core issue #54). The adapters cannot be released on
+  this commit; they move to the published core `0.2` in a later change.
 - **Breaking:** diagnostics are always located in the source text nodes.
   `coordinateSpace` and `segmentRevision` are removed from
   `AdapterDiagnosticLocation`; in `fix` mode, a subject inside text produced by
