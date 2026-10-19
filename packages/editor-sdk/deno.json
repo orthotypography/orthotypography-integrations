@@ -10,10 +10,16 @@
     "@orthotypography/core": "https://raw.githubusercontent.com/orthotypography/orthotypography/71d23eacad1a3722f316e65e3821f7fecad437e7/src/mod.ts"
   },
   "publish": {
-    "include": ["README.md", "mod.ts", "google-docs.ts", "src/**/*.ts"]
+    "include": [
+      "README.md",
+      "mod.ts",
+      "google-docs.ts",
+      "src/**/*.ts"
+    ]
   },
   "tasks": {
-    "check": "deno fmt --check && deno lint && deno check mod.ts google-docs.ts src/*.ts tests/*.ts && deno doc mod.ts && deno doc google-docs.ts",
-    "test": "deno test tests"
+    "check": "deno fmt --check && deno lint && deno check mod.ts google-docs.ts src/*.ts tests/*.ts live/*.ts && deno doc mod.ts && deno doc google-docs.ts",
+    "test": "deno test tests",
+    "live:rest": "deno run --allow-env=GOOGLE_DOCS_ACCESS_TOKEN,GOOGLE_DOCS_DOCUMENT_ID --allow-net=docs.googleapis.com live/google_docs_rest_check.ts"
   }
 }

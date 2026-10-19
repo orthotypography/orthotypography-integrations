@@ -97,10 +97,57 @@ identifiants fournis par l'application hôte. Le SDK a depuis été publié en
 
 ## Portée après le passage au cœur `0.1.0-alpha.3`
 
-Ce compte rendu reste attaché au cœur `0.1.0-alpha.2`. Avec
-`0.1.0-alpha.3`, l'espace après un point d'exclamation devient une correction
-atomique distincte : les fixtures hors ligne de ce scénario produisent neuf
-corrections et 26 requêtes au lieu de huit et 24, pour un texte planifié
-toujours identique à la relecture réelle, styles compris. Ce lot de 26 requêtes
-n'a pas été exécuté dans Google Docs ; seule la validation hors ligne couvre le
-SDK `0.1.0-alpha.1`.
+Ce compte rendu reste attaché au cœur `0.1.0-alpha.2`. Avec `0.1.0-alpha.3`,
+l'espace après un point d'exclamation devient une correction atomique distincte
+: les fixtures hors ligne de ce scénario produisent neuf corrections et 26
+requêtes au lieu de huit et 24, pour un texte planifié toujours identique à la
+relecture réelle, styles compris. Ce lot de 26 requêtes n'a pas été exécuté dans
+Google Docs ; seule la validation hors ligne couvre le SDK `0.1.0-alpha.1`.
+
+## Ligne `0.2` : procédure de validation par le transport REST
+
+La passe `review`, l'acceptation par groupes et les corrections écartées (PR nº
+9 et 10) n'ont pas encore été exécutées dans Google Docs. Le script
+[`packages/editor-sdk/live/google_docs_rest_check.ts`](../packages/editor-sdk/live/google_docs_rest_check.ts)
+les déroule par `createGoogleDocsRestTransport`, sans connecteur, sur un
+document jetable :
+
+1. préparation : le document doit porter un titre commençant par
+   `orthotypography-live-check` et ne contenir qu'un paragraphe vide dans un
+   seul onglet ; sinon le script s'arrête sans écrire. Il y insère trois
+   paragraphes de test, dont un mot en gras ;
+2. passe `review` sans écriture : groupes, indications `suggested` (la règle de
+   l'euro, en mode `review`, donne un groupe non suggéré) ;
+3. commit partiel : tous les groupes du premier paragraphe, le premier du
+   deuxième, aucun du troisième ; relecture vérifiée par le SDK ;
+4. correction écartée dans le troisième paragraphe, puis commit avec
+   restauration des styles de tous les autres groupes ;
+5. conservation de la correction écartée par le client, qui en recalcule les
+   identifiants natifs et les décalages après l'écriture : plus aucune requête ;
+6. deux revues de la même révision : la première s'applique, la seconde est
+   refusée en conflit de révision et le document reste inchangé ;
+7. idempotence de la dernière passe.
+
+Le jeton d'accès (portée `https://www.googleapis.com/auth/documents`) est fourni
+par la personne qui exécute le script, comme le ferait une application hôte ; le
+script ne l'affiche, ne l'enregistre ni ne le renouvelle. Le rapport JSON écrit
+sur la sortie standard ne contient ni identifiant de document, ni révision, ni
+jeton.
+
+```sh
+cd packages/editor-sdk
+read -rs GOOGLE_DOCS_ACCESS_TOKEN && export GOOGLE_DOCS_ACCESS_TOKEN
+GOOGLE_DOCS_DOCUMENT_ID=<identifiant> deno task live:rest > rapport.json
+```
+
+Le test hors ligne `tests/google_docs_live_check_test.ts` exécute ce même
+scénario contre un service Google Docs simulé en mémoire, au niveau HTTP ; il
+valide la logique du script, pas le comportement réel du service. Le résultat de
+l'exécution réelle sera consigné ici.
+
+Les identifiants de suites et de nœuds de l'extracteur sont des indices natifs
+absolus : toute écriture antérieure les déplace. Une application qui conserve
+des corrections écartées doit donc les rattacher à une position stable (ici,
+rang du paragraphe et du segment, décalages dans le segment) et les résoudre de
+nouveau sur chaque lecture. Le script le fait explicitement ; ce point sera à
+reprendre dans la conception de l'application cliente de référence.
