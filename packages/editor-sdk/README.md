@@ -304,12 +304,13 @@ deno task check
 deno task test
 ```
 
-`deno task live:rest` runs a live Google Docs check of the review pass, group
-acceptance, dismissed proposals, and the REST transport on a throwaway document.
-It needs `GOOGLE_DOCS_DOCUMENT_ID` and a caller-supplied
-`GOOGLE_DOCS_ACCESS_TOKEN`, and refuses any document whose title does not start
-with `orthotypography-live-check` or whose body is not a single empty paragraph.
-See the
+`./live/run.sh` (or `deno task live:rest`) runs a live Google Docs check of the
+review pass, group acceptance, dismissed proposals, and the REST transport on a
+throwaway document. It prompts for the document URL or ID and a caller-supplied
+access token (or reads `GOOGLE_DOCS_DOCUMENT_ID` and
+`GOOGLE_DOCS_ACCESS_TOKEN`), writes a sanitized `live-report.json`, and refuses
+any document whose title does not start with `orthotypography-live-check` or
+whose body is not a single empty paragraph. See the
 [procedure](../../docs/google-docs-live-validation.md#ligne-02--procédure-de-validation-par-le-transport-rest).
 
 The independent configuration and CI job do not alter the released packages'

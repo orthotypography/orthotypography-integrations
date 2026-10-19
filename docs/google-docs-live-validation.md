@@ -130,15 +130,20 @@ document jetable :
 
 Le jeton d'accès (portée `https://www.googleapis.com/auth/documents`) est fourni
 par la personne qui exécute le script, comme le ferait une application hôte ; le
-script ne l'affiche, ne l'enregistre ni ne le renouvelle. Le rapport JSON écrit
-sur la sortie standard ne contient ni identifiant de document, ni révision, ni
-jeton.
+script ne l'affiche, ne l'enregistre ni ne le renouvelle. Le rapport JSON, écrit
+dans `packages/editor-sdk/live-report.json` (ignoré par Git) et sur la sortie
+standard, ne contient ni identifiant de document, ni révision, ni jeton. Depuis
+une copie de la branche qui contient le script :
 
 ```sh
 cd packages/editor-sdk
-read -rs GOOGLE_DOCS_ACCESS_TOKEN && export GOOGLE_DOCS_ACCESS_TOKEN
-GOOGLE_DOCS_DOCUMENT_ID=<identifiant> deno task live:rest > rapport.json
+./live/run.sh
 ```
+
+Le lanceur demande l'URL ou l'identifiant du document, puis le jeton sans
+l'afficher. Un jeton de l'OAuth 2.0 Playground expire au bout d'une heure ; un
+jeton sans la portée requise produit un échec `permission` consigné dans le
+rapport.
 
 Le test hors ligne `tests/google_docs_live_check_test.ts` exécute ce même
 scénario contre un service Google Docs simulé en mémoire, au niveau HTTP ; il
