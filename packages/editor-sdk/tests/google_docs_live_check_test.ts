@@ -9,17 +9,26 @@ type Style = Readonly<Record<string, unknown>>;
 interface Character {
   readonly c: string;
   readonly style: Style;
+  /** Insertion that produced the character, when insertions stay separate. */
+  readonly insertion?: number;
 }
 
 /**
  * Minimal in-memory Google Docs v1 service for one single-tab document: GET
  * documents/{id} and POST documents/{id}:batchUpdate with insertText,
  * deleteContentRange, updateTextStyle, and requiredRevisionId. Inserted text
- * takes the style of the preceding character in its paragraph. It only
- * approximates the service; it does not replace a live run.
+ * takes the style of the preceding character in its paragraph. Adjacent text of
+ * one style forms one text run, unless `separateInsertions` keeps each
+ * insertion of a write after the first in its own run, as Google did in the
+ * live run of 19 October. It only approximates the service; it does not
+ * replace a live run.
  */
-function fakeGoogleDocs(title: string) {
+function fakeGoogleDocs(
+  title: string,
+  options: { readonly separateInsertions?: boolean } = {},
+) {
   let characters: Character[] = [{ c: "\n", style: {} }];
+  let insertions = 0;
   let revision = 0;
   const requests: string[] = [];
 
@@ -30,7 +39,9 @@ function fakeGoogleDocs(title: string) {
     }];
     let index = 1;
     let paragraph: { startIndex: number; elements: unknown[] } | undefined;
-    let run: { startIndex: number; text: string; style: Style } | undefined;
+    let run:
+      | { startIndex: number; text: string; style: Style; insertion?: number }
+      | undefined;
     const flush = (end: number) => {
       if (run) {
         paragraph!.elements.push({
@@ -44,10 +55,16 @@ function fakeGoogleDocs(title: string) {
     for (const character of characters) {
       paragraph ??= { startIndex: index, elements: [] };
       if (
-        !run || JSON.stringify(run.style) !== JSON.stringify(character.style)
+        !run || JSON.stringify(run.style) !== JSON.stringify(character.style) ||
+        run.insertion !== character.insertion
       ) {
         flush(index);
-        run = { startIndex: index, text: "", style: character.style };
+        run = {
+          startIndex: index,
+          text: "",
+          style: character.style,
+          insertion: character.insertion,
+        };
       }
       run.text += character.c;
       index++;
@@ -75,11 +92,15 @@ function fakeGoogleDocs(title: string) {
       const style = previous && previous.c !== "\n"
         ? previous.style
         : characters[at]?.style ?? {};
+      // The setup write (revision 0) is merged; later insertions may not be.
+      const insertion = options.separateInsertions && revision > 0
+        ? ++insertions
+        : undefined;
       characters.splice(
         at,
         0,
         ...[...text].flatMap((c) =>
-          c.split("").map((unit) => ({ c: unit, style }))
+          c.split("").map((unit) => ({ c: unit, style, insertion }))
         ),
       );
     } else if (request.deleteContentRange) {
@@ -100,7 +121,7 @@ function fakeGoogleDocs(title: string) {
           if (field in textStyle) style[field] = textStyle[field];
           else delete style[field];
         }
-        characters[i] = { c: characters[i].c, style };
+        characters[i] = { ...characters[i], style };
       }
     } else {
       throw new Error(`Unsupported fake request: ${Object.keys(request)}`);
@@ -183,6 +204,25 @@ Deno.test("live check scenario passes against a simulated Google Docs service", 
     assert.equal(serialized.includes(secret), false, secret);
   }
   assert.ok(fake.requests.some((request) => request.endsWith(":batchUpdate")));
+});
+
+// Ignored until the core keeps a correct inner guillemet space found in a
+// separate node: on core 22b5a10, `«` · U+00A0 · `oui` · U+00A0 · `»` gets a
+// second no-break space on each side in review and fix modes, so the
+// scenario's first paragraph is corrupted after the partial commit.
+Deno.test({
+  name: "live check scenario passes when inserted text stays in separate runs",
+  ignore: true,
+}, async () => {
+  const fake = fakeGoogleDocs("orthotypography-live-check 2026-10-19", {
+    separateInsertions: true,
+  });
+  const messages: string[] = [];
+  const report = await runLiveCheck(transportFor(fake), "fake-document", {
+    log: (message) => messages.push(message),
+  });
+  assert.equal(report.failure, undefined, messages.join("\n"));
+  assert.equal(report.ok, true);
 });
 
 Deno.test("live check refuses a document that is not a throwaway check document", async () => {
