@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { parseCoreDependency } from "../../../scripts/core_dependency.ts";
 
-const commit = "82e4cc97e3e97dfddc37ec9c1aacc33f07b3d229";
+const commit = "71d23eacad1a3722f316e65e3821f7fecad437e7";
 
 Deno.test("core dependency distinguishes published and development pins", () => {
   assert.deepEqual(
