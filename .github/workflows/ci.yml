@@ -16,9 +16,16 @@ jobs:
       - uses: denoland/setup-deno@v2
         with:
           deno-version: v2.x
+      - name: Resolve core dependencies
+        id: core
+        run: deno task core:status
       - run: deno task check
       - run: deno task test
-      - run: deno task publish:check
+      # A lane pinned to a development core commit cannot be published.
+      - if: steps.core.outputs.adapters == 'published'
+        run: deno task publish:check:adapters
+      - if: steps.core.outputs.editor_sdk == 'published'
+        run: deno task publish:check:editor-sdk
 
   npm-package:
     needs: test
@@ -32,13 +39,27 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-      - run: deno task npm:build:rehype
-      - run: deno task npm:build:satteri
-      - run: deno task npm:build:astro
-      - run: deno task npm:build:editor-sdk
-      - run: deno task npm:install
-      - run: deno task npm:smoke
-      - run: deno task npm:pack
+      - name: Resolve core dependencies
+        id: core
+        run: deno task core:status
+      - name: Build, smoke-test, and pack the adapters
+        if: steps.core.outputs.adapters == 'published'
+        run: |
+          deno task npm:build:rehype
+          deno task npm:build:satteri
+          deno task npm:build:astro
+          deno task npm:install
+          node scripts/npm_smoke.mjs adapters
+          (cd npm/rehype && npm pack --dry-run)
+          (cd npm/satteri && npm pack --dry-run)
+          (cd npm/astro && npm pack --dry-run)
+      - name: Build, smoke-test, and pack the editor SDK
+        if: steps.core.outputs.editor_sdk == 'published'
+        run: |
+          deno task npm:build:editor-sdk
+          node scripts/npm_smoke.mjs editor-sdk
+          node scripts/npm_editor_smoke.mjs
+          node scripts/npm_editor_pack_check.mjs
 
   editor-sdk:
     runs-on: ubuntu-latest

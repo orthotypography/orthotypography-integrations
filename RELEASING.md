@@ -18,6 +18,10 @@ The repository has two independent release lanes:
 A release in one lane never checks, builds, or publishes a package of the other
 lane.
 
+A lane pinned to a development core commit (see `CONTRIBUTING.md`) cannot be
+released: JSR rejects the import, and `scripts/build_npm.ts` refuses to package
+it. Pin a published core version in a dedicated pull request first.
+
 ## Publication setup
 
 - Each package is linked to this repository on JSR, which publishes with the

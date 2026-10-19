@@ -28,46 +28,56 @@ async function importPackage(directory, exportName = ".") {
   return { module, packageJson };
 }
 
-const rehype = await importPackage("rehype");
-assert.equal(typeof rehype.module.rehypeOrthotypography, "function");
-assert.equal(
-  rehype.packageJson.dependencies["@orthotypography/core"],
-  adapterCoreVersion,
-);
+const lanes = ["adapters", "editor-sdk"];
+const selectedLane = process.argv[2];
+if (selectedLane !== undefined && !lanes.includes(selectedLane)) {
+  throw new Error(`Unknown release lane: ${selectedLane}`);
+}
 
-const satteri = await importPackage("satteri");
-assert.equal(typeof satteri.module.satteriOrthotypography, "function");
-assert.equal(
-  satteri.packageJson.dependencies["@orthotypography/core"],
-  adapterCoreVersion,
-);
-assert.equal(satteri.packageJson.dependencies.satteri, "^0.10.5");
+if (selectedLane === undefined || selectedLane === "adapters") {
+  const rehype = await importPackage("rehype");
+  assert.equal(typeof rehype.module.rehypeOrthotypography, "function");
+  assert.equal(
+    rehype.packageJson.dependencies["@orthotypography/core"],
+    adapterCoreVersion,
+  );
 
-const astro = await importPackage("astro");
-assert.equal(typeof astro.module.default, "function");
-assert.equal(typeof astro.module.orthotypography, "function");
-assert.equal(
-  astro.packageJson.dependencies["@orthotypography/rehype"],
-  astro.packageJson.version,
-);
-assert.equal(
-  astro.packageJson.dependencies["@orthotypography/satteri"],
-  astro.packageJson.version,
-);
-assert.equal(astro.packageJson.peerDependencies.astro, "^7.0.0");
+  const satteri = await importPackage("satteri");
+  assert.equal(typeof satteri.module.satteriOrthotypography, "function");
+  assert.equal(
+    satteri.packageJson.dependencies["@orthotypography/core"],
+    adapterCoreVersion,
+  );
+  assert.equal(satteri.packageJson.dependencies.satteri, "^0.10.5");
 
-const editorSdk = await importPackage("editor-sdk");
-assert.equal(typeof editorSdk.module.prepareDocumentPlan, "function");
-assert.equal(typeof editorSdk.module.createMemoryDocument, "function");
-assert.equal(
-  editorSdk.packageJson.dependencies["@orthotypography/core"],
-  editorCoreVersion,
-);
+  const astro = await importPackage("astro");
+  assert.equal(typeof astro.module.default, "function");
+  assert.equal(typeof astro.module.orthotypography, "function");
+  assert.equal(
+    astro.packageJson.dependencies["@orthotypography/rehype"],
+    astro.packageJson.version,
+  );
+  assert.equal(
+    astro.packageJson.dependencies["@orthotypography/satteri"],
+    astro.packageJson.version,
+  );
+  assert.equal(astro.packageJson.peerDependencies.astro, "^7.0.0");
+}
 
-const googleDocs = await importPackage("editor-sdk", "./google-docs");
-assert.equal(typeof googleDocs.module.extractGoogleDocsBody, "function");
-assert.equal(typeof googleDocs.module.prepareGoogleDocsReview, "function");
-assert.equal(
-  typeof googleDocs.module.createGoogleDocsRestTransport,
-  "function",
-);
+if (selectedLane === undefined || selectedLane === "editor-sdk") {
+  const editorSdk = await importPackage("editor-sdk");
+  assert.equal(typeof editorSdk.module.prepareDocumentPlan, "function");
+  assert.equal(typeof editorSdk.module.createMemoryDocument, "function");
+  assert.equal(
+    editorSdk.packageJson.dependencies["@orthotypography/core"],
+    editorCoreVersion,
+  );
+
+  const googleDocs = await importPackage("editor-sdk", "./google-docs");
+  assert.equal(typeof googleDocs.module.extractGoogleDocsBody, "function");
+  assert.equal(typeof googleDocs.module.prepareGoogleDocsReview, "function");
+  assert.equal(
+    typeof googleDocs.module.createGoogleDocsRestTransport,
+    "function",
+  );
+}

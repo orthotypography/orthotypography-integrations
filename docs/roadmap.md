@@ -1,27 +1,26 @@
 # Feuille de route des intégrations
 
-État vérifié le 26 septembre 2026 sur
-[`4127a9f`](https://github.com/orthotypography/orthotypography-integrations/commit/4127a9f),
-après la fusion de la [PR nº 3](https://github.com/orthotypography/orthotypography-integrations/pull/3) : publication npm de confiance sans jeton,
-tag npm `latest` pour toute version `0.x` et guide de contribution. Le cœur
-`0.1.0-alpha.3` est publié. La [PR nº 4](https://github.com/orthotypography/orthotypography-integrations/pull/4) traduit le `CHANGELOG` et la
-[PR nº 5](https://github.com/orthotypography/orthotypography-integrations/pull/5) prépare les adaptateurs `0.1.0-alpha.2` sur ce cœur, et la
-[PR nº 6](https://github.com/orthotypography/orthotypography-integrations/pull/6) le SDK `0.1.0-alpha.1` ; aucune n’est fusionnée ni publiée à
-cette date. Les tâches ci-dessous sont proposées,
-sans engagement de date.
+État vérifié le 19 octobre 2026 sur
+[`c14dd25`](https://github.com/orthotypography/orthotypography-integrations/commit/c14dd25),
+après la fusion des PR nº 4 à 7. Les adaptateurs `0.1.0-alpha.2` et le SDK
+`0.1.0-alpha.1`, tous deux sur le cœur `0.1.0-alpha.3`, ont fait l'objet des
+releases GitHub du 26 septembre ; leur présence sur npm (tag `latest`) est
+vérifiée, celle sur JSR ne l'a pas été à cette date. Le cœur prépare sa ligne
+`0.2`, non publiée (§ « Passage au cœur 0.2 »). Les tâches ci-dessous sont
+proposées, sans engagement de date.
 
 ## État acquis
 
-| Chantier                   | État vérifié                                                                                                                                     | Preuve                                                                                                                                                                  |
-| -------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Markdown / Astro           | Rehype, Sätteri et Astro publiés en `0.1.0-alpha.1`, cible Astro 7 ; processeur configuré préservé, diagnostics et changements localisés exposés | [Release](https://github.com/orthotypography/orthotypography-integrations/releases/tag/v0.1.0-alpha.1), [configuration](../deno.json)                                 |
-| Dépendance des adaptateurs | Cœur `0.1.0-alpha.1` publié ; passage au cœur `0.1.0-alpha.3` préparé dans la [PR nº 5](https://github.com/orthotypography/orthotypography-integrations/pull/5), testé hors ligne ; mise à niveau indépendante du SDK | [Configuration](../deno.json)                                                                                                                                           |
-| SDK neutre                 | `@orthotypography/editor-sdk@0.1.0-alpha.0` publié ; instantanés et plans immuables, validation complète, adaptateur atomique en mémoire         | [Release SDK](https://github.com/orthotypography/orthotypography-integrations/releases/tag/editor-sdk-v0.1.0-alpha.0), [README SDK](../packages/editor-sdk/README.md) |
-| Dépendance du SDK          | Cœur `0.1.0-alpha.2` publié ; passage au cœur `0.1.0-alpha.3` et SDK `0.1.0-alpha.1` préparés dans la [PR nº 6](https://github.com/orthotypography/orthotypography-integrations/pull/6), testés hors ligne | [Manifeste SDK](../packages/editor-sdk/deno.json)                                                                                                                       |
-| Google Docs                | Extraction des paragraphes et onglets imbriqués, coordonnées UTF-16, compilation conditionnelle, restauration limitée des styles                 | [Périmètre](google-docs-preview.md), [README SDK](../packages/editor-sdk/README.md)                                                                                     |
-| Transport et révision      | Transport REST injecté, relecture vérifiée, préparation / validation / abandon d'une révision proposée ; objets à usage unique                   | [README SDK](../packages/editor-sdk/README.md)                                                                                                                          |
-| Tests SDK                  | 67 tests annoncés pour la release alpha.0 ; 67 tests exécutés hors ligne contre le cœur `0.1.0-alpha.3` sur la branche de préparation d'alpha.1 | Release SDK ; ce nombre n'est pas une nouvelle exécution                                                                                                                |
-| Validation réelle          | Scénario limité exécuté via le connecteur Google Drive le 6 septembre avec le cœur `0.1.0-alpha.2`, non rejoué avec `0.1.0-alpha.3` ; transport REST direct encore à valider en conditions réelles | [Compte rendu](google-docs-live-validation.md)                                                                                                                          |
+| Chantier                   | État vérifié                                                                                                                                                                                                                                                              | Preuve                                                                                                                                                                |
+| -------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Markdown / Astro           | Rehype, Sätteri et Astro publiés en `0.1.0-alpha.2`, cible Astro 7 ; processeur configuré préservé, diagnostics et changements localisés exposés                                                                                                                          | [Release](https://github.com/orthotypography/orthotypography-integrations/releases/tag/v0.1.0-alpha.2), [configuration](../deno.json)                                 |
+| Dépendance des adaptateurs | Versions publiées sur le cœur `0.1.0-alpha.3` ; développement contre le commit [`71d23ea`](https://github.com/orthotypography/orthotypography/commit/71d23eacad1a3722f316e65e3821f7fecad437e7) de la ligne `0.2`, testé hors ligne ; publication impossible sur ce commit | [Configuration](../deno.json), `deno task core:status`                                                                                                                |
+| SDK neutre                 | `@orthotypography/editor-sdk@0.1.0-alpha.1` publié ; instantanés et plans immuables, validation complète, adaptateur atomique en mémoire                                                                                                                                  | [Release SDK](https://github.com/orthotypography/orthotypography-integrations/releases/tag/editor-sdk-v0.1.0-alpha.1), [README SDK](../packages/editor-sdk/README.md) |
+| Dépendance du SDK          | Cœur `0.1.0-alpha.3` publié                                                                                                                                                                                                                                               | [Manifeste SDK](../packages/editor-sdk/deno.json)                                                                                                                     |
+| Google Docs                | Extraction des paragraphes et onglets imbriqués, coordonnées UTF-16, compilation conditionnelle, restauration limitée des styles                                                                                                                                          | [Périmètre](google-docs-preview.md), [README SDK](../packages/editor-sdk/README.md)                                                                                   |
+| Transport et révision      | Transport REST injecté, relecture vérifiée, préparation / validation / abandon d'une révision proposée ; objets à usage unique                                                                                                                                            | [README SDK](../packages/editor-sdk/README.md)                                                                                                                        |
+| Tests SDK                  | 67 tests annoncés pour la release alpha.0 ; 67 tests exécutés hors ligne contre le cœur `0.1.0-alpha.3` sur la branche de préparation d'alpha.1                                                                                                                           | Release SDK ; ce nombre n'est pas une nouvelle exécution                                                                                                              |
+| Validation réelle          | Scénario limité exécuté via le connecteur Google Drive le 6 septembre avec le cœur `0.1.0-alpha.2`, non rejoué avec `0.1.0-alpha.3` ; transport REST direct encore à valider en conditions réelles                                                                        | [Compte rendu](google-docs-live-validation.md)                                                                                                                        |
 
 Le SDK est dans `packages/editor-sdk`. L'ancien état expérimental non publié ne
 décrit plus la situation courante. Les deux points d'entrée `.` et
@@ -43,25 +42,42 @@ charge. Le SDK ne fournit ni interface utilisateur, ni acquisition/stockage
 OAuth, ni relance automatique. La persistance des plans et l'acceptation
 partielle sont hors du contrat actuel.
 
+## Passage au cœur 0.2
+
+Le cœur réalise, dans sa ligne `0.2` non publiée, la conception « diagnostics
+reliés à leurs changements »
+([`docs/conception-resultats-v0.1.md`](https://github.com/orthotypography/orthotypography/blob/main/docs/conception-resultats-v0.1.md),
+§ 9 pour les intégrations) : nouvelle interface des règles (PR nº 50 du cœur),
+modifications portées par les diagnostics et emplacements toujours sources (nº
+52, 53), identifiants de changements et groupes de propositions (nº 56), mode
+`review` et propositions écartées (nº 57), puis correction de l'espace après
+`?`, `!`, `:` et `;` devant un signe fermant (nº 58, anomalie nº 54), tous
+fusionnés au 19 octobre. Chaque voie s'y adapte d'abord contre une dépendance de
+développement immuable, un commit précis du cœur, puis contre la `0.2` une fois
+publiée sur instruction explicite. Une voie épinglée sur un commit ne peut être
+ni empaquetée ni publiée ; la CI saute ses contrôles JSR et npm
+([`CONTRIBUTING.md`](../CONTRIBUTING.md#trying-an-unreleased-engine)).
+
+| Étape | Voie        | Contenu                                                                                                                                                                                                                  | État                                    |
+| ----- | ----------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | --------------------------------------- |
+| 1     | Adaptateurs | Commit `71d23ea` (`main` du cœur après la PR nº 58) ; diagnostics toujours en coordonnées sources, `coordinateSpace` et `segmentRevision` retirés de `AdapterDiagnostic` ; application tout ou rien, groupes non exposés | implémenté, testé hors ligne            |
+| 2     | SDK         | Passe unique `review`, groupes de propositions, acceptation par groupes entiers, propositions écartées                                                                                                                   | à faire                                 |
+| 3     | Les deux    | Passage au cœur `0.2` publié, puis releases des deux voies                                                                                                                                                               | sur instruction explicite               |
+| 4     | SDK         | Validation réelle dans Google Docs avec le cœur `0.2`                                                                                                                                                                    | à faire, distincte des tests hors ligne |
+
 ## Prochaines tâches proposées
 
 1. **Cohérence documentaire et linguistique.** Actualiser les mentions « non
    publié » et « aucun adaptateur natif » devenues obsolètes, notamment dans le
    README SDK et les notes documentaires. Traduire en anglais la prose hors de
-   `docs/` et auditer les autres fichiers. `RELEASING.md` est traduit dans la
-   [PR nº 3](https://github.com/orthotypography/orthotypography-integrations/pull/3),
-   qui retire aussi le jeton npm des workflows de publication ; `CHANGELOG.md`
-   est traduit et réparti par voie de release dans la
-   [PR nº 4](https://github.com/orthotypography/orthotypography-integrations/pull/4).
-   Terminé lorsque
-   l'état publié, les limites et la politique linguistique concordent sans
-   modifier les données de test.
-2. **Markdown / Astro : passer au cœur publié.** La [PR nº 5](https://github.com/orthotypography/orthotypography-integrations/pull/5) monte les
-   trois adaptateurs sur le cœur `0.1.0-alpha.3` et fixe leur version à
-   `0.1.0-alpha.2`. Les tests des deux processeurs, des diagnostics, des
-   changements localisés et du contenu protégé passent hors ligne contre ce
-   cœur ; la CI vérifie les paquets JSR et npm. Publier ensuite sur instruction
-   explicite, sans aligner la version des adaptateurs sur celle du SDK.
+   `docs/` et auditer les autres fichiers ; `RELEASING.md` et `CHANGELOG.md`
+   sont traduits. Terminé lorsque l'état publié, les limites et la politique
+   linguistique concordent sans modifier les données de test.
+2. **Passer au cœur `0.2` publié.** Après la publication du cœur, remplacer dans
+   chaque voie la dépendance de développement par la version publiée, vérifier
+   les paquets JSR et npm, puis préparer les releases des adaptateurs et du SDK.
+   Publier ensuite sur instruction explicite, sans aligner la version des
+   adaptateurs sur celle du SDK.
 3. **Google Docs : valider le transport REST réel.** Utiliser un document
    jetable et des identifiants fournis par l'application hôte. Vérifier
    préparation sans écriture, écriture conditionnelle, relecture, idempotence,

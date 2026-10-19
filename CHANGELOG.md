@@ -7,6 +7,34 @@ and Astro adapters (`rehype`, `satteri`, and `astro`) share one version and the
 
 ## Unreleased
 
+### Adapters
+
+- Develop `rehype`, `satteri`, and `astro` against the unreleased core `0.2`
+  line, pinned to commit
+  [`71d23ea`](https://github.com/orthotypography/orthotypography/commit/71d23eacad1a3722f316e65e3821f7fecad437e7)
+  (core `main` after its pull request #58). Outputs follow the core changes
+  since `0.1.0-alpha.3` listed in the core `CHANGELOG`, notably rules run once
+  per logical run, so constructs split across inline nodes are corrected or
+  protected, and the space after `?`, `!`, `:`, and `;` before a closing sign is
+  left to that sign's rule (core issue #54). The adapters cannot be released on
+  this commit; they move to the published core `0.2` in a later change.
+- **Breaking:** diagnostics are always located in the source text nodes.
+  `coordinateSpace` and `segmentRevision` are removed from
+  `AdapterDiagnosticLocation`; in `fix` mode, a subject inside text produced by
+  an earlier fix is reported on the source range of that fix. Changes reported
+  through `onChange` and `orthotypographyChanges` carry the core's `id`, unique
+  within one logical run. The adapters still apply every change and do not
+  expose proposal groups.
+- Custom rules follow the core `0.2` rule interface (`apply(run: LogicalRun)`).
+
+### Repository
+
+- `deno task core:status` reports whether each release lane depends on a
+  published core or on an immutable development commit. CI runs the JSR dry runs
+  and npm package checks of a lane only when it depends on a published core, and
+  `scripts/build_npm.ts` refuses to package a lane pinned to a development
+  commit.
+
 ## Editor SDK 0.1.0-alpha.1 - 2026-09-26
 
 - Upgrade from `@orthotypography/core@0.1.0-alpha.2` to `0.1.0-alpha.3`. Plans

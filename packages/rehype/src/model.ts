@@ -30,12 +30,15 @@ export interface AdapterTextNodeOutput {
   readonly protected?: boolean;
 }
 
+/**
+ * Location in one input text node of the logical run. `start` and `end` are
+ * UTF-16 offsets into `segmentValue`, the node's source text; a subject inside
+ * text produced by an earlier fix is reported on the source range of that fix.
+ */
 export interface AdapterDiagnosticLocation {
-  readonly coordinateSpace: "source" | "runtime";
   readonly segmentIndex: number;
   readonly segmentId?: string;
   readonly segmentValue: string;
-  readonly segmentRevision: number;
   readonly start: number;
   readonly end: number;
 }
