@@ -1,6 +1,7 @@
 import {
   type DocumentPlan,
   type DocumentSnapshot,
+  type PlannedGroup,
   validateDocumentPlan,
 } from "./mod.ts";
 import type { GoogleDocsTextStyle } from "./google-docs-style.ts";
@@ -54,16 +55,18 @@ function splitsSurrogate(text: string, offset: number): boolean {
 }
 
 /**
- * Compiles a full plan to descending body-text requests with a revision guard.
- * The caller supplies paragraph-bounded text and native ranges from one read.
- * This function cannot verify those ranges against Google or preserve styles.
+ * Compiles the accepted groups of a plan to descending body-text requests with
+ * a revision guard. The caller supplies paragraph-bounded text and native
+ * ranges from one read. This function cannot verify those ranges against
+ * Google or preserve styles.
  */
 export function previewGoogleDocsRequests(
   plan: DocumentPlan,
   current: DocumentSnapshot,
   nativeRanges: readonly GoogleDocsNodeRange[],
+  accepted: readonly PlannedGroup[],
 ): GoogleDocsRequestPreview {
-  const batch = validateDocumentPlan(plan, current);
+  const batch = validateDocumentPlan(plan, current, accepted);
   const ranges = new Map<string, GoogleDocsNodeRange>();
   for (const input of nativeRanges) {
     const range = { ...input };

@@ -11,9 +11,13 @@ import {
   previewGoogleDocsStyledRequests,
 } from "./google-docs-style.ts";
 import {
+  type DocumentBatch,
+  type DocumentDismissal,
   type DocumentPlan,
   type DocumentSnapshot,
+  type PlannedGroup,
   prepareDocumentPlan,
+  validateDocumentPlan,
 } from "./mod.ts";
 
 /** Exact read requirements for a response accepted by the extractor. */
@@ -65,13 +69,20 @@ interface GoogleDocsReviewBase {
   readonly plan: DocumentPlan;
 }
 
-/** Opaque review whose preview contains text operations only. */
+/**
+ * Opaque review whose preview contains text operations only. The preview
+ * compiles every group of the plan; a commit compiles the accepted groups.
+ */
 export interface GoogleDocsTextReview extends GoogleDocsReviewBase {
   readonly mode: "text";
   readonly preview: GoogleDocsRequestPreview;
 }
 
-/** Opaque review whose preview also restores supported source styles. */
+/**
+ * Opaque review whose preview also restores supported source styles. The
+ * preview compiles every group of the plan; a commit compiles the accepted
+ * groups.
+ */
 export interface GoogleDocsStyledReview extends GoogleDocsReviewBase {
   readonly mode: "preserve-styles";
   readonly preview: GoogleDocsStyledPreview;
@@ -80,18 +91,35 @@ export interface GoogleDocsStyledReview extends GoogleDocsReviewBase {
 /** Session-local review returned only by prepareGoogleDocsReview. */
 export type GoogleDocsReview = GoogleDocsTextReview | GoogleDocsStyledReview;
 
+/** Accepted groups of a committed review and the payload compiled for them. */
+export interface GoogleDocsCommitment<TReview extends GoogleDocsReview> {
+  /** Accepted groups, in plan order. */
+  readonly accepted: readonly PlannedGroup[];
+  /** Requests compiled for the accepted groups; empty when nothing changes. */
+  readonly committed: TReview["preview"];
+}
+
 export type GoogleDocsNormalizationResult<
   TReview extends GoogleDocsReview = GoogleDocsReview,
 > =
-  | (TReview & { readonly status: "unchanged" })
-  | (TReview & { readonly status: "revision-conflict" })
-  | (TReview & {
+  | (TReview & GoogleDocsCommitment<TReview> & {
+    readonly status: "unchanged";
+  })
+  | (TReview & GoogleDocsCommitment<TReview> & {
+    readonly status: "revision-conflict";
+  })
+  | (TReview & GoogleDocsCommitment<TReview> & {
     readonly status: "applied";
     readonly after: DocumentSnapshot;
   });
 
 export interface GoogleDocsReviewOptions {
   readonly preserveStyles?: boolean;
+  /**
+   * Proposals the host declined, designated by run, rule, and source location
+   * as a previous plan reported them. The host keeps and updates them.
+   */
+  readonly dismissed?: readonly DocumentDismissal[];
 }
 
 interface GoogleDocsReviewState {
@@ -153,6 +181,7 @@ function canonical(value: unknown): string {
 function verifyReadback(
   before: ReturnType<typeof extractGoogleDocsBody>,
   plan: DocumentPlan,
+  batch: DocumentBatch,
   after: ReturnType<typeof extractGoogleDocsBody>,
   styled: boolean,
 ): void {
@@ -170,7 +199,10 @@ function verifyReadback(
   for (const [index, planned] of plan.runs.entries()) {
     const source = before.snapshot.runs[index];
     const observed = after.snapshot.runs[index];
-    const expectedText = planned.preview.map((node) => node.value).join("");
+    // Runs without accepted changes must keep their source text.
+    const expected = batch.runs.find((run) => run.id === planned.id)?.preview ??
+      source.nodes;
+    const expectedText = expected.map((node) => node.value).join("");
     const observedText = observed.nodes.map((node) => node.value).join("");
     if (observedText !== expectedText) {
       throw new GoogleDocsReadbackError(
@@ -187,7 +219,7 @@ function verifyReadback(
       throw new GoogleDocsReadbackError("Google Docs readback tab changed");
     }
     if (!styled) continue;
-    const expectedStyles = planned.preview.flatMap((node) => {
+    const expectedStyles = expected.flatMap((node) => {
       const range = before.ranges.find((item) =>
         item.runId === source.id && item.nodeId === node.id
       );
@@ -215,6 +247,11 @@ function verifyReadback(
       );
     }
   }
+}
+
+/** Every group of a plan, in plan order. */
+function allGroups(plan: DocumentPlan): readonly PlannedGroup[] {
+  return plan.runs.flatMap((run) => run.groups);
 }
 
 /** Reads once and prepares a style-preserving review without writing. */
@@ -262,8 +299,11 @@ export async function prepareGoogleDocsReview(
   if (before.snapshot.documentId !== documentId) {
     throw new Error("Google Docs transport returned a different document");
   }
-  const plan = prepareDocumentPlan(before.snapshot, rules);
+  const plan = prepareDocumentPlan(before.snapshot, rules, {
+    dismissed: options.dismissed ?? [],
+  });
   const styled = options.preserveStyles === true;
+  const groups = allGroups(plan);
   const review: GoogleDocsReview = styled
     ? Object.freeze({
       [googleDocsReviewBrand]: true as const,
@@ -274,6 +314,7 @@ export async function prepareGoogleDocsReview(
         plan,
         before.snapshot,
         before.ranges,
+        groups,
       ),
     })
     : Object.freeze({
@@ -281,7 +322,12 @@ export async function prepareGoogleDocsReview(
       mode: "text" as const,
       before: before.snapshot,
       plan,
-      preview: previewGoogleDocsRequests(plan, before.snapshot, before.ranges),
+      preview: previewGoogleDocsRequests(
+        plan,
+        before.snapshot,
+        before.ranges,
+        groups,
+      ),
     });
   reviews.set(review, {
     transport,
@@ -293,27 +339,33 @@ export async function prepareGoogleDocsReview(
 }
 
 /**
- * Commits one original review exactly once and verifies one full readback.
- * Revision conflicts consume the review and are returned without retry.
+ * Commits the accepted groups of one original review exactly once and verifies
+ * one full readback. Groups are accepted whole, as the original objects of the
+ * review's plan. Revision conflicts consume the review and are returned without
+ * retry. An invalid selection throws before the review is consumed.
  */
 export function commitGoogleDocsReview(
   transport: GoogleDocsTransport,
   review: GoogleDocsStyledReview,
+  accepted: readonly PlannedGroup[],
 ): Promise<GoogleDocsNormalizationResult<GoogleDocsStyledReview>>;
 
 export function commitGoogleDocsReview(
   transport: GoogleDocsTransport,
   review: GoogleDocsTextReview,
+  accepted: readonly PlannedGroup[],
 ): Promise<GoogleDocsNormalizationResult<GoogleDocsTextReview>>;
 
 export function commitGoogleDocsReview(
   transport: GoogleDocsTransport,
   review: GoogleDocsReview,
+  accepted: readonly PlannedGroup[],
 ): Promise<GoogleDocsNormalizationResult>;
 
 export async function commitGoogleDocsReview(
   transport: GoogleDocsTransport,
   review: GoogleDocsReview,
+  accepted: readonly PlannedGroup[],
 ): Promise<GoogleDocsNormalizationResult> {
   const state = reviews.get(review);
   if (!state) {
@@ -334,20 +386,31 @@ export async function commitGoogleDocsReview(
       "Google Docs review was already consumed",
     );
   }
+  // Compile and validate the selection against the prepared read first.
+  const { snapshot, ranges } = state.source;
+  const batch = validateDocumentPlan(review.plan, snapshot, accepted);
+  const committed = review.mode === "preserve-styles"
+    ? previewGoogleDocsStyledRequests(review.plan, snapshot, ranges, accepted)
+    : previewGoogleDocsRequests(review.plan, snapshot, ranges, accepted);
+  const commitment = { accepted: batch.groups, committed };
   state.status = "committing";
-  if (review.preview.body.requests.length === 0) {
+  if (committed.body.requests.length === 0) {
     state.status = "committed";
-    return Object.freeze({ ...review, status: "unchanged" });
+    return Object.freeze({ ...review, ...commitment, status: "unchanged" });
   }
   const result = await transport.write({
-    documentId: review.preview.documentId,
-    requests: review.preview.body.requests,
-    requiredRevisionId: review.preview.body.writeControl.requiredRevisionId,
+    documentId: committed.documentId,
+    requests: committed.body.requests,
+    requiredRevisionId: committed.body.writeControl.requiredRevisionId,
   });
   state.status = "committed";
   if (!result.ok) {
     if (result.kind === "revision-conflict") {
-      return Object.freeze({ ...review, status: "revision-conflict" });
+      return Object.freeze({
+        ...review,
+        ...commitment,
+        status: "revision-conflict",
+      });
     }
     throw new GoogleDocsTransportFailure(result.kind, result.message);
   }
@@ -361,10 +424,16 @@ export async function commitGoogleDocsReview(
   verifyReadback(
     state.source,
     review.plan,
+    batch,
     after,
     review.mode === "preserve-styles",
   );
-  return Object.freeze({ ...review, status: "applied", after: after.snapshot });
+  return Object.freeze({
+    ...review,
+    ...commitment,
+    status: "applied",
+    after: after.snapshot,
+  });
 }
 
 /**
@@ -397,7 +466,10 @@ export function discardGoogleDocsReview(
   state.status = "discarded";
 }
 
-/** Reads, writes, and verifies a style-preserving normalization. */
+/**
+ * Reads, writes, and verifies a style-preserving normalization that accepts
+ * every group of the prepared plan.
+ */
 export function normalizeGoogleDocsDocument(
   transport: GoogleDocsTransport,
   documentId: string,
@@ -406,7 +478,10 @@ export function normalizeGoogleDocsDocument(
   options: { readonly preserveStyles: true },
 ): Promise<GoogleDocsNormalizationResult<GoogleDocsStyledReview>>;
 
-/** Reads, writes, and verifies a text-only normalization. */
+/**
+ * Reads, writes, and verifies a text-only normalization that accepts every
+ * group of the prepared plan.
+ */
 export function normalizeGoogleDocsDocument(
   transport: GoogleDocsTransport,
   documentId: string,
@@ -415,7 +490,10 @@ export function normalizeGoogleDocsDocument(
   options?: { readonly preserveStyles?: false },
 ): Promise<GoogleDocsNormalizationResult<GoogleDocsTextReview>>;
 
-/** Reads, writes, and verifies the normalization mode selected at runtime. */
+/**
+ * Reads, writes, and verifies the normalization mode selected at runtime,
+ * accepting every group of the prepared plan.
+ */
 export function normalizeGoogleDocsDocument(
   transport: GoogleDocsTransport,
   documentId: string,
@@ -431,14 +509,16 @@ export async function normalizeGoogleDocsDocument(
   rules: readonly RuntimeRule[],
   options: GoogleDocsReviewOptions = {},
 ): Promise<GoogleDocsNormalizationResult> {
+  const review = await prepareGoogleDocsReview(
+    transport,
+    documentId,
+    locale,
+    rules,
+    options,
+  );
   return await commitGoogleDocsReview(
     transport,
-    await prepareGoogleDocsReview(
-      transport,
-      documentId,
-      locale,
-      rules,
-      options,
-    ),
+    review,
+    allGroups(review.plan),
   );
 }

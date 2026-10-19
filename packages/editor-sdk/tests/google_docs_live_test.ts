@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { IMPRIMERIE_NATIONALE_PUNCTUATION_RULES as rules } from "@orthotypography/core";
 import { extractGoogleDocsBody } from "../src/google-docs-extract.ts";
 import { prepareDocumentPlan } from "../src/mod.ts";
+import { allGroups } from "./helpers.ts";
 import { previewGoogleDocsStyledRequests } from "../src/google-docs-style.ts";
 import { after, before } from "./fixtures/google_docs_live.ts";
 
@@ -13,6 +14,7 @@ Deno.test("live Google Docs readback matches planned text and every source style
     plan,
     source.snapshot,
     source.ranges,
+    allGroups(plan),
   );
   // The live run used core 0.1.0-alpha.2, whose eight changes produced 24
   // requests. Core 0.1.0-alpha.3 reports the space after an exclamation mark as
@@ -50,7 +52,8 @@ Deno.test("live Google Docs corrected readback needs no further requests", () =>
   const { snapshot, ranges } = extractGoogleDocsBody(after, "fr-FR");
   const plan = prepareDocumentPlan(snapshot, rules);
   assert.deepEqual(
-    previewGoogleDocsStyledRequests(plan, snapshot, ranges).body.requests,
+    previewGoogleDocsStyledRequests(plan, snapshot, ranges, allGroups(plan))
+      .body.requests,
     [],
   );
 });
