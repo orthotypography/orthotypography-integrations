@@ -11,7 +11,7 @@ for tools across the JavaScript ecosystem.
 | `@orthotypography/rehype`     | `0.1.0-alpha.2` | adapts the core to Unified and rehype        |
 | `@orthotypography/satteri`    | `0.1.0-alpha.2` | adapts the core to native Sätteri HAST hooks |
 | `@orthotypography/astro`      | `0.1.0-alpha.2` | preserves and extends either Astro processor |
-| `@orthotypography/editor-sdk` | `0.1.0-alpha.1` | prepares guarded native editor transactions  |
+| `@orthotypography/editor-sdk` | `0.2.0-alpha.0` | prepares guarded native editor transactions  |
 
 The repository is organized as a workspace. Deno provides the development
 tooling; the published packages target the JavaScript ecosystem in general.

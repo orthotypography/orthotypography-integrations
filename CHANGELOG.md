@@ -34,7 +34,15 @@ and Astro adapters (`rehype`, `satteri`, and `astro`) share one version and the
   expose proposal groups.
 - Custom rules follow the core `0.2` rule interface (`apply(run: LogicalRun)`).
 
-### Editor SDK
+### Repository
+
+- `deno task core:status` reports whether each release lane depends on a
+  published core or on an immutable development commit. CI runs the JSR dry runs
+  and npm package checks of a lane only when it depends on a published core, and
+  `scripts/build_npm.ts` refuses to package a lane pinned to a development
+  commit.
+
+## Editor SDK 0.2.0-alpha.0 - 2026-10-19
 
 - Upgrade from `@orthotypography/core@0.1.0-alpha.3` to `0.2.0-alpha.0`, after
   development against core commits of the `0.2` line. The core brings the review
@@ -73,14 +81,10 @@ and Astro adapters (`rehype`, `satteri`, and `astro`) share one version and the
   `dismissed`; `review.preview` and `normalizeGoogleDocsDocument` still cover
   every group.
 - Synthetic test rules follow the core `0.2` rule interface.
-
-### Repository
-
-- `deno task core:status` reports whether each release lane depends on a
-  published core or on an immutable development commit. CI runs the JSR dry runs
-  and npm package checks of a lane only when it depends on a published core, and
-  `scripts/build_npm.ts` refuses to package a lane pinned to a development
-  commit.
+- Report each lane's core dependency with `deno task core:status`; CI runs a
+  lane's JSR dry runs and npm package checks only when it depends on a published
+  core, and `scripts/build_npm.ts` refuses to package a lane pinned to a
+  development core commit.
 
 ## Editor SDK 0.1.0-alpha.1 - 2026-09-26
 
