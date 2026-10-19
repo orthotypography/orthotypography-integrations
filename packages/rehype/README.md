@@ -14,7 +14,7 @@ npm install @orthotypography/core @orthotypography/rehype
 With Deno or another JSR client:
 
 ```sh
-deno add jsr:@orthotypography/core@0.1.0-alpha.3 jsr:@orthotypography/rehype@0.1.0-alpha.2
+deno add jsr:@orthotypography/core@0.2.0-alpha.0 jsr:@orthotypography/rehype@0.2.0-alpha.0
 ```
 
 ## Usage
