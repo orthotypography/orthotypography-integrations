@@ -147,10 +147,10 @@ rapport.
 
 Le test hors ligne `tests/google_docs_live_check_test.ts` exécute ce même
 scénario contre un service Google Docs simulé en mémoire, au niveau HTTP ; il
-valide la logique du script, pas le comportement réel du service. Le résultat de
-l'exécution réelle est consigné ci-dessous.
+valide la logique du script, pas le comportement réel du service. Les deux
+exécutions réelles sont consignées ci-dessous.
 
-### Exécution réelle du 19 octobre 2026 : partielle
+### Première exécution réelle, 19 octobre 2026 : partielle
 
 Le script a été exécuté une première fois le 19 octobre à 10 h 33 UTC, sous Deno
 2.9.7, depuis la branche de la PR nº 12, avec le cœur épinglé `71d23ea`, sur un
@@ -201,9 +201,43 @@ texte (anomalie nº 66 du cœur). Les deux défauts sont corrigés au commit
 le scénario passe hors ligne dans les deux modes du simulateur.
 
 Le script détaille désormais, en cas d'échec de ces étapes, les propositions
-restantes et les segments de chaque paragraphe concerné. Une nouvelle exécution
-complète est prévue après la correction du cœur, sur un nouveau document
-jetable.
+restantes et les segments de chaque paragraphe concerné.
+
+### Seconde exécution réelle, 19 octobre 2026 : complète
+
+Le script a été exécuté de nouveau le 19 octobre à 12 h 38 UTC, sous Deno 2.9.7,
+depuis la branche de la PR nº 12 avec le cœur épinglé `4e440e5`, sur un nouveau
+document jetable et avec un nouveau jeton fourni par la personne qui l'a lancé.
+Les sept étapes ont réussi (`ok: true`) :
+
+- passe `review` : onze groupes, dont un non suggéré (règle de l'euro) ;
+- commit partiel de six groupes sur onze : 9 requêtes au lieu de 17, relecture
+  vérifiée ;
+- correction de `quotes.french.nbsp-inner` écartée, puis commit avec
+  restauration des styles des autres groupes : 11 requêtes, dont 4 restaurations
+  de style, relecture vérifiée styles compris ;
+- conservation de la correction écartée après l'écriture, une fois ses
+  identifiants natifs et ses décalages recalculés : aucune requête, revue
+  consommée sans écriture (`unchanged`) ;
+- deux revues de la même révision : la première appliquée, la seconde refusée en
+  `revision-conflict` par Google et classée comme telle par le transport REST,
+  le document restant inchangé après le refus ;
+- dernière passe idempotente : aucun groupe.
+
+Le texte final des trois paragraphes est celui attendu par le scénario, avec les
+espaces insécables et fines prescrites. Le rapport ne contient ni identifiant de
+document, ni révision, ni jeton.
+
+Cette exécution valide en conditions réelles, pour ce scénario de trois
+paragraphes dans un seul onglet : la passe `review` et ses indications
+`suggested`, l'acceptation par groupes entiers, une correction écartée conservée
+par le client, la restauration limitée des styles, et le transport
+`createGoogleDocsRestTransport` (lecture complète, écriture conditionnée par
+`requiredRevisionId`, relecture, classification d'un conflit de révision réel).
+Elle ne couvre ni plusieurs onglets, ni un second utilisateur simultané, ni les
+structures et styles déjà exclus ; elle porte sur une dépendance de
+développement du cœur et devra être vérifiée rapidement avec le cœur `0.2`
+publié.
 
 Les identifiants de suites et de nœuds de l'extracteur sont des indices natifs
 absolus : toute écriture antérieure les déplace. Une application qui conserve
