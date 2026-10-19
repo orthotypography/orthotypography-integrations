@@ -76,6 +76,36 @@ function check(condition: unknown, message: string): asserts condition {
   if (!condition) throw new Error(`Check failed: ${message}`);
 }
 
+/**
+ * Synthetic structure of the remaining proposals, for failure reports: the
+ * scenario text is test data, so node values and changes can be reported.
+ */
+function remaining(review: GoogleDocsReview): Record<string, unknown> {
+  return {
+    runs: review.plan.runs.map((run, index) => ({
+      paragraph: index,
+      nodes: review.plan.source.runs[index].nodes.map((node) => node.value),
+      changes: run.changes.map((change) => ({
+        ruleIds: change.ruleIds,
+        node: change.segmentIndex,
+        start: change.start,
+        end: change.end,
+        expected: change.expected,
+        replacement: change.replacement,
+      })),
+      dismissed: run.diagnostics.filter((d) => d.dismissed === true).map((
+        d,
+      ) => ({ ruleId: d.ruleId, node: d.segmentIndex, start: d.start })),
+    })).filter((run) => run.changes.length > 0 || run.dismissed.length > 0),
+  };
+}
+
+/** Records a failed step with its details, then stops the scenario. */
+function fail(name: string, message: string, details: Record<string, unknown>) {
+  steps.push({ name, ok: false, details });
+  throw new Error(`Check failed: ${message}`);
+}
+
 function record(name: string, details: Record<string, unknown>): void {
   steps.push({ name, ok: true, details });
   log(`ok: ${name}`);
@@ -348,10 +378,12 @@ async function scenario(
     rules,
     { dismissed: [await resolve(transport, documentId, tracked)] },
   );
-  check(
-    keptAgain.preview.body.requests.length === 0,
-    "only the dismissed proposal remains",
-  );
+  if (keptAgain.preview.body.requests.length !== 0) {
+    fail("dismissal-kept", "only the dismissed proposal remains", {
+      requests: keptAgain.preview.body.requests.length,
+      ...remaining(keptAgain),
+    });
+  }
   check(
     keptAgain.plan.runs[2].diagnostics.some((d) => d.dismissed === true),
     "dismissal still matches after range update",
@@ -414,7 +446,12 @@ async function scenario(
     LOCALE,
     rules,
   );
-  check(final.preview.body.requests.length === 0, "final pass is idempotent");
+  if (final.preview.body.requests.length !== 0) {
+    fail("idempotence", "final pass is idempotent", {
+      requests: final.preview.body.requests.length,
+      ...remaining(final),
+    });
+  }
   discardGoogleDocsReview(transport, final);
   record("idempotence", { groups: groups(final).length });
   record("final-text", { paragraphs: texts(afterConflict) });
