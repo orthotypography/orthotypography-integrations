@@ -191,6 +191,15 @@ Google peut produire seul, et le SDK enverrait à chaque passe une suppression e
 une insertion qui peuvent changer le style de l'espace. Le simulateur du test
 hors ligne fusionne les segments de même style et ne reproduit pas ce cas.
 
+Le simulateur du test hors ligne peut désormais garder chaque insertion dans son
+propre segment, comme Google l'a fait. Dans ce mode, il a révélé un second
+défaut du cœur, antérieur au premier : une espace insécable correcte à
+l'intérieur de guillemets, placée dans un segment voisin, recevait une seconde
+espace (`«` · espace insécable · `oui` devenait `«  oui`), ce qui altérait le
+texte (anomalie nº 66 du cœur). Les deux défauts sont corrigés au commit
+`4e440e5` du cœur (PR nº 64 et 67), sur lequel les deux voies sont épinglées ;
+le scénario passe hors ligne dans les deux modes du simulateur.
+
 Le script détaille désormais, en cas d'échec de ces étapes, les propositions
 restantes et les segments de chaque paragraphe concerné. Une nouvelle exécution
 complète est prévue après la correction du cœur, sur un nouveau document

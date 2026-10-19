@@ -206,14 +206,9 @@ Deno.test("live check scenario passes against a simulated Google Docs service", 
   assert.ok(fake.requests.some((request) => request.endsWith(":batchUpdate")));
 });
 
-// Ignored until the core keeps a correct inner guillemet space found in a
-// separate node: on core 22b5a10, `«` · U+00A0 · `oui` · U+00A0 · `»` gets a
-// second no-break space on each side in review and fix modes, so the
-// scenario's first paragraph is corrupted after the partial commit.
-Deno.test({
-  name: "live check scenario passes when inserted text stays in separate runs",
-  ignore: true,
-}, async () => {
+// Google kept an inserted space as its own text run in the live run of
+// 19 October; the core must stay idempotent on such splits (core #63, #66).
+Deno.test("live check scenario passes when inserted text stays in separate runs", async () => {
   const fake = fakeGoogleDocs("orthotypography-live-check 2026-10-19", {
     separateInsertions: true,
   });
