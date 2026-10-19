@@ -25,7 +25,7 @@ deno task npm:check
 ```
 
 The three content adapters are developed against core commit
-[`71d23ea`](https://github.com/orthotypography/orthotypography/commit/71d23eacad1a3722f316e65e3821f7fecad437e7)
+[`22b5a10`](https://github.com/orthotypography/orthotypography/commit/22b5a105f13e0e94955aa1ca20561a79c47047fc)
 of the unreleased `0.2` line; their published `0.1.0-alpha.2` versions use
 `@orthotypography/core@0.1.0-alpha.3`. The independently versioned editor SDK is
 developed against the same core commit; its published `0.1.0-alpha.1` uses core

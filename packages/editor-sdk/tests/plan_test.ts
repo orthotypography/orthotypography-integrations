@@ -528,3 +528,29 @@ Deno.test("a group whose proposals cancel each other has no change to accept", (
     [],
   );
 });
+
+Deno.test("run locales are canonical and must be supported by the rules", () => {
+  const lowercase = single("Bonjour , monde !");
+  const canonical = prepareDocumentPlan(lowercase, rules);
+  const lower = prepareDocumentPlan({
+    ...lowercase,
+    runs: [{ ...lowercase.runs[0], locale: "fr-fr" }],
+  }, rules);
+  assert.deepEqual(lower.runs[0].preview, canonical.runs[0].preview);
+  assert.throws(
+    () =>
+      prepareDocumentPlan({
+        ...lowercase,
+        runs: [{ ...lowercase.runs[0], locale: "en-US" }],
+      }, rules),
+    /No rule supports locale en-US/,
+  );
+  // An empty composition still plans nothing for any locale.
+  assert.deepEqual(
+    prepareDocumentPlan({
+      ...lowercase,
+      runs: [{ ...lowercase.runs[0], locale: "en-US" }],
+    }, []).runs[0].changes,
+    [],
+  );
+});
