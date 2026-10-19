@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import {
+  IMPRIMERIE_NATIONALE_RULES,
   type RuntimeRule,
   SAFE_PUNCTUATION_RULES,
   type TextChange,
@@ -15,7 +16,7 @@ import {
 
 const testRule = {} as RuntimeRule;
 
-Deno.test("adapter uses the published core runner by default", () => {
+Deno.test("adapter uses the core runner by default", () => {
   const tree: HastRoot = {
     type: "root",
     children: [{ type: "text", value: "Bonjour , monde." }],
@@ -50,6 +51,51 @@ Deno.test("adapter exposes source-coordinate changes", () => {
   assert.equal(observed[0].expected, " ,");
   assert.equal(observed[0].replacement, ",");
   assert.deepEqual(file.data.orthotypographyChanges, observed);
+});
+
+Deno.test("fix diagnostics stay located in the source text nodes", () => {
+  const sources = ["Il dit «Quoi?» et paie ", "1200 €", "."];
+  const tree: HastRoot = {
+    type: "root",
+    children: [{
+      type: "element",
+      tagName: "p",
+      children: [
+        { type: "text", value: sources[0] },
+        {
+          type: "element",
+          tagName: "strong",
+          children: [{ type: "text", value: sources[1] }],
+        },
+        { type: "text", value: sources[2] },
+      ],
+    }],
+  };
+  const reported: AdapterDiagnostic[] = [];
+
+  rehypeOrthotypography({
+    rules: IMPRIMERIE_NATIONALE_RULES,
+    locale: "fr-FR",
+    mode: "fix",
+    onDiagnostic: (diagnostic) => reported.push(diagnostic),
+  })(tree);
+
+  const sourceById = new Map([
+    ["0.0", sources[0]],
+    ["0.1.0", sources[1]],
+    ["0.2", sources[2]],
+  ]);
+  assert.ok(reported.length > 0);
+  for (const diagnostic of reported) {
+    assert.equal(
+      diagnostic.segmentValue,
+      sourceById.get(diagnostic.segmentId ?? ""),
+    );
+    assert.ok(0 <= diagnostic.start && diagnostic.start <= diagnostic.end);
+    assert.ok(diagnostic.end <= diagnostic.segmentValue.length);
+    assert.equal("coordinateSpace" in diagnostic, false);
+  }
+  assert.notEqual(tree.children[0].children?.[0].value, sources[0]);
 });
 
 function fixRunner(
@@ -182,11 +228,9 @@ Deno.test("protected inline content stays inside its logical run", () => {
 
 Deno.test("lint diagnostics are reported without mutating the tree", () => {
   const diagnostic: AdapterDiagnostic = {
-    coordinateSpace: "source",
     segmentIndex: 0,
     segmentId: "0.0",
     segmentValue: "texte",
-    segmentRevision: 0,
     start: 0,
     end: 1,
     ruleId: "test",

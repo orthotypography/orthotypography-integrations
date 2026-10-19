@@ -38,4 +38,9 @@ their `segmentId`, while `fix` replaces node values and exposes
 source-coordinate changes through `onChange` and
 `file.data.orthotypographyChanges`. Block elements, raw HTML, and `code`, `pre`,
 `script`, and `style` form boundaries. The `exclude` and `protect` predicates
-let an integration adjust this policy.
+let an integration adjust this policy. Diagnostics are located in the source
+text nodes in both modes: `segmentValue` is the node's text before any fix, and
+a subject inside text produced by an earlier fix is reported on the source range
+of that fix. Change IDs and the `groupId` and `changeIds` of diagnostics are
+unique within one logical run only; the adapter applies every change of a run
+and does not expose proposal groups.

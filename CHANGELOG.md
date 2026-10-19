@@ -7,6 +7,25 @@ and Astro adapters (`rehype`, `satteri`, and `astro`) share one version and the
 
 ## Unreleased
 
+### Adapters
+
+- Develop `rehype`, `satteri`, and `astro` against the unreleased core `0.2`
+  line, pinned to commit
+  [`82e4cc9`](https://github.com/orthotypography/orthotypography/commit/82e4cc97e3e97dfddc37ec9c1aacc33f07b3d229)
+  (core `main` after its pull request #56). Outputs follow the core changes
+  since `0.1.0-alpha.3` listed in the core `CHANGELOG`, notably rules run once
+  per logical run, so constructs split across inline nodes are corrected or
+  protected. The adapters cannot be released on this commit; they move to the
+  published core `0.2` in a later change.
+- **Breaking:** diagnostics are always located in the source text nodes.
+  `coordinateSpace` and `segmentRevision` are removed from
+  `AdapterDiagnosticLocation`; in `fix` mode, a subject inside text produced by
+  an earlier fix is reported on the source range of that fix. Changes reported
+  through `onChange` and `orthotypographyChanges` carry the core's `id`, unique
+  within one logical run. The adapters still apply every change and do not
+  expose proposal groups.
+- Custom rules follow the core `0.2` rule interface (`apply(run: LogicalRun)`).
+
 ### Repository
 
 - `deno task core:status` reports whether each release lane depends on a

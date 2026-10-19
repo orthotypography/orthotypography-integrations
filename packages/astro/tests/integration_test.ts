@@ -139,7 +139,7 @@ Deno.test("Astro integration preserves an explicit Unified processor", () => {
   assert.equal(configured.options.rehypePlugins.length, 1);
 });
 
-Deno.test("Astro's Unified renderer applies the published core", async () => {
+Deno.test("Astro's Unified renderer applies the core", async () => {
   const update = setup(orthotypography({
     rules: SAFE_PUNCTUATION_RULES,
     locale: "fr-FR",

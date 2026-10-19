@@ -40,4 +40,9 @@ block boundaries, raw HTML, and `code`, `pre`, `script`, and `style` elements.
 Diagnostics are passed to `onDiagnostic`, reported through Sätteri, and stored
 in `result.data.orthotypographyDiagnostics` for direct Sätteri consumers.
 Source-coordinate fixes are passed to `onChange` and stored in
-`result.data.orthotypographyChanges`.
+`result.data.orthotypographyChanges`. Diagnostics are located in the source text
+nodes in both modes: `segmentValue` is the node's text before any fix, and a
+subject inside text produced by an earlier fix is reported on the source range
+of that fix. Change IDs and the `groupId` and `changeIds` of diagnostics are
+unique within one logical run only; the adapter applies every change of a run
+and does not expose proposal groups.
