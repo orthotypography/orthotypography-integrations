@@ -1,31 +1,26 @@
 # Feuille de route des intégrations
 
-État vérifié le 19 octobre 2026 sur
-[`0a3ee14`](https://github.com/orthotypography/orthotypography-integrations/commit/0a3ee14),
-après la fusion des
-[PR nº 8](https://github.com/orthotypography/orthotypography-integrations/pull/8),
-[nº 9](https://github.com/orthotypography/orthotypography-integrations/pull/9)
-et
-[nº 10](https://github.com/orthotypography/orthotypography-integrations/pull/10).
-Les deux voies ont été développées sur `main` contre le commit `71d23ea` du
-cœur, avec une CI verte (`test`, `npm-package`, `editor-sdk`), puis réépinglées
-sur `ae78ecd` (identifiant `4e440e5` avant la réécriture des auteurs de `main`
-du cœur le 19 octobre, arbre identique), qui corrige les deux défauts relevés par le premier test réel
-dans Google Docs et par son simulateur. Les adaptateurs `0.1.0-alpha.2` et le
-SDK `0.1.0-alpha.1`, tous deux sur le cœur `0.1.0-alpha.3`, ont fait l'objet des
-releases GitHub du 26 septembre ; leur présence sur npm (tag `latest`) est
-vérifiée, celle sur JSR ne l'a pas été à cette date. Le cœur prépare sa ligne
-`0.2`, non publiée (§ « Passage au cœur 0.2 »). Les tâches ci-dessous sont
-proposées, sans engagement de date.
+État vérifié le 19 octobre 2026. Le cœur `0.2.0-alpha.0` est publié (npm, tag
+`latest`, commit
+[`ea17be8`](https://github.com/orthotypography/orthotypography/commit/ea17be8cf2e9d305d0c80a30ac1bb2e15d388421),
+dont le code est celui du commit `ae78ecd` validé ici). Les deux voies en
+dépendent désormais, après leur développement contre des commits de la ligne
+`0.2` (PR nº 8 à 14) ; leurs propres releases ne sont pas encore préparées ni
+publiées. Les adaptateurs `0.1.0-alpha.2` et le SDK `0.1.0-alpha.1`, tous deux
+sur le cœur `0.1.0-alpha.3`, ont fait l'objet des releases GitHub du 26
+septembre ; leur présence sur npm (tag `latest`) est vérifiée, celle sur JSR ne
+l'a pas été à cette date. Le cœur prépare sa ligne `0.2`, non publiée
+(§ « Passage au cœur 0.2 »). Les tâches ci-dessous sont proposées, sans
+engagement de date.
 
 ## État acquis
 
 | Chantier                   | État vérifié                                                                                                                                                                                                                                                                                                                                | Preuve                                                                                                                                                                |
 | -------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Markdown / Astro           | Rehype, Sätteri et Astro publiés en `0.1.0-alpha.2`, cible Astro 7 ; processeur configuré préservé, diagnostics et changements localisés exposés                                                                                                                                                                                            | [Release](https://github.com/orthotypography/orthotypography-integrations/releases/tag/v0.1.0-alpha.2), [configuration](../deno.json)                                 |
-| Dépendance des adaptateurs | Versions publiées sur le cœur `0.1.0-alpha.3` ; développement contre le commit [`ae78ecd`](https://github.com/orthotypography/orthotypography/commit/ae78ecdc184de4d4d2e4129fda1431dd76059916) de la ligne `0.2`, testé hors ligne ; publication impossible sur ce commit                                                                   | [Configuration](../deno.json), `deno task core:status`                                                                                                                |
+| Dépendance des adaptateurs | Versions publiées sur le cœur `0.1.0-alpha.3` ; `main` sur le cœur publié `0.2.0-alpha.0`, testé hors ligne                                                                                                                                                                                                                                 | [Configuration](../deno.json), `deno task core:status`                                                                                                                |
 | SDK neutre                 | `@orthotypography/editor-sdk@0.1.0-alpha.1` publié ; instantanés et plans immuables, validation complète, adaptateur atomique en mémoire                                                                                                                                                                                                    | [Release SDK](https://github.com/orthotypography/orthotypography-integrations/releases/tag/editor-sdk-v0.1.0-alpha.1), [README SDK](../packages/editor-sdk/README.md) |
-| Dépendance du SDK          | Version publiée sur le cœur `0.1.0-alpha.3` ; développement contre le commit [`ae78ecd`](https://github.com/orthotypography/orthotypography/commit/ae78ecdc184de4d4d2e4129fda1431dd76059916) du cœur, qui contient le mode `review` (PR nº 57), testé hors ligne ; publication impossible sur ce commit                                     | [Manifeste SDK](../packages/editor-sdk/deno.json), `deno task core:status`                                                                                            |
+| Dépendance du SDK          | Version publiée sur le cœur `0.1.0-alpha.3` ; `main` sur le cœur publié `0.2.0-alpha.0`, testé hors ligne                                                                                                                                                                                                                                   | [Manifeste SDK](../packages/editor-sdk/deno.json), `deno task core:status`                                                                                            |
 | Google Docs                | Extraction des paragraphes et onglets imbriqués, coordonnées UTF-16, compilation conditionnelle, restauration limitée des styles                                                                                                                                                                                                            | [Périmètre](google-docs-preview.md), [README SDK](../packages/editor-sdk/README.md)                                                                                   |
 | Transport et révision      | Transport REST injecté, relecture vérifiée, préparation / validation / abandon d'une révision proposée ; objets à usage unique                                                                                                                                                                                                              | [README SDK](../packages/editor-sdk/README.md)                                                                                                                        |
 | Tests SDK                  | 67 tests pour la release alpha.1 contre le cœur `0.1.0-alpha.3` ; 80 tests exécutés hors ligne le 19 octobre contre le commit `ae78ecd` du cœur, dont la passe `review`, les groupes, l'acceptation partielle, les corrections écartées et une relecture Google Docs simulée                                                                | Tests du SDK ; aucune exécution réelle                                                                                                                                |
@@ -81,7 +76,7 @@ ni empaquetée ni publiée ; la CI saute ses contrôles JSR et npm
 | ----- | ----------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | 1     | Adaptateurs | Commit `ae78ecd` (`main` du cœur après la PR nº 67) ; diagnostics toujours en coordonnées sources, `coordinateSpace` et `segmentRevision` retirés de `AdapterDiagnostic` ; application tout ou rien, groupes non exposés                                     | fusionné ([PR nº 8](https://github.com/orthotypography/orthotypography-integrations/pull/8)), testé hors ligne                                                                                                               |
 | 2     | SDK         | Commit `ae78ecd`, comme les adaptateurs ; passe unique `review`, groupes exposés par le plan, validation et commit Google Docs par groupes entiers, propositions écartées transmises au cœur                                                                 | fusionné ([PR nº 9](https://github.com/orthotypography/orthotypography-integrations/pull/9), portée sur `main` par la [PR nº 10](https://github.com/orthotypography/orthotypography-integrations/pull/10)), testé hors ligne |
-| 3     | Les deux    | Passage au cœur `0.2` publié, puis releases des deux voies                                                                                                                                                                                                   | sur instruction explicite                                                                                                                                                                                                    |
+| 3     | Les deux    | Passage au cœur `0.2` publié, puis releases des deux voies                                                                                                                                                                                                   | cœur `0.2.0-alpha.0` adopté sur `main` ; releases à préparer, publication sur instruction explicite                                                                                                                          |
 | 4     | SDK         | Validation réelle dans Google Docs de la passe `review`, de l'acceptation par groupes, d'une correction écartée et du transport REST direct, sur le commit de développement avant la publication du cœur, puis vérification rapide avec le cœur `0.2` publié | validée en réel le 19 octobre avec le cœur `ae78ecd` ([compte rendu](google-docs-live-validation.md)) ; vérification avec le cœur publié à faire                                                                             |
 
 Les tests hors ligne de l'étape 2 utilisent une relecture Google Docs simulée à
@@ -104,11 +99,11 @@ application devrait présenter ses diagnostics comme contradictoires.
    `docs/` et auditer les autres fichiers ; `RELEASING.md` et `CHANGELOG.md`
    sont traduits. Terminé lorsque l'état publié, les limites et la politique
    linguistique concordent sans modifier les données de test.
-2. **Passer au cœur `0.2` publié.** Après la publication du cœur, remplacer dans
-   chaque voie la dépendance de développement par la version publiée, vérifier
-   les paquets JSR et npm, puis préparer les releases des adaptateurs et du SDK.
-   Publier ensuite sur instruction explicite, sans aligner la version des
-   adaptateurs sur celle du SDK.
+2. **Préparer les releases sur le cœur `0.2.0-alpha.0`.** Les deux voies en
+   dépendent sur `main`. Rejouer rapidement le test réel Google Docs
+   (`deno task live:rest`) avec le cœur publié, puis préparer, dans deux PR
+   distinctes, les versions des adaptateurs et du SDK, sans les aligner. Publier
+   ensuite sur instruction explicite.
 3. **Google Docs : élargir la validation réelle.** Le transport REST est validé
    le 19 octobre pour un scénario de trois paragraphes dans un onglet
    (préparation sans écriture, écriture conditionnelle, relecture, conflit de

@@ -7,7 +7,7 @@
     "./google-docs": "./google-docs.ts"
   },
   "imports": {
-    "@orthotypography/core": "https://raw.githubusercontent.com/orthotypography/orthotypography/ae78ecdc184de4d4d2e4129fda1431dd76059916/src/mod.ts"
+    "@orthotypography/core": "jsr:@orthotypography/core@0.2.0-alpha.0"
   },
   "publish": {
     "include": [

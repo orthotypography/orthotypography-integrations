@@ -6,9 +6,8 @@ editor transaction. The module contains no editor API or Deno runtime
 dependency.
 
 This is an alpha release. Its API may change before `1.0.0`. The published
-`0.1.0-alpha.1` uses `@orthotypography/core@0.1.0-alpha.3`. The development line
-described below targets the unreleased core `0.2` and is pinned to a core
-commit; it cannot be published until the core `0.2` is.
+`0.1.0-alpha.1` uses `@orthotypography/core@0.1.0-alpha.3`. The unreleased
+version described below uses `@orthotypography/core@0.2.0-alpha.0`.
 
 The package exposes `.` for the neutral contract and `./google-docs` for the
 provider-specific surface. It uses an independent version from the Astro
