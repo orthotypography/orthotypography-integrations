@@ -5,8 +5,10 @@ immutable correction plans and validates their complete source before a native
 editor transaction. The module contains no editor API or Deno runtime
 dependency.
 
-This is an alpha release. Its API may change before `1.0.0`. It uses
-`@orthotypography/core@0.1.0-alpha.3`.
+This is an alpha release. Its API may change before `1.0.0`. The published
+`0.1.0-alpha.1` uses `@orthotypography/core@0.1.0-alpha.3`. The development line
+described below targets the unreleased core `0.2` and is pinned to a core
+commit; it cannot be published until the core `0.2` is.
 
 The package exposes `.` for the neutral contract and `./google-docs` for the
 provider-specific surface. It uses an independent version from the Astro
@@ -49,30 +51,58 @@ const source = {
 };
 
 const plan = prepareDocumentPlan(source, IMPRIMERIE_NATIONALE_RULES);
-// Display plan.runs: source diagnostics, complete changes, and preview nodes.
+// Display plan.runs: source diagnostics, proposal groups, and preview nodes.
+// Here, accept the groups whose proposals all come from fix-mode rules.
+const accepted = plan.runs.flatMap((run) =>
+  run.groups.filter((group) => group.suggested)
+);
 // In an actual editor, read a fresh snapshot before validation.
-const batch = validateDocumentPlan(plan, source);
-// The adapter must atomically check batch.expectedRevision and commit ALL edits.
+const batch = validateDocumentPlan(plan, source, accepted);
+// The adapter must atomically check batch.expectedRevision and commit ALL of
+// the batch's changes.
 ```
 
 Node identities are scoped to a run; run identities are scoped to a document.
 All IDs, revisions, and locales must be nonempty. A run ends at each semantic
 boundary. Known read-only text can participate as a protected node.
 
-The SDK runs lint and fix separately. Diagnostics, including related locations,
-refer to the original run's UTF-16 node coordinates. Use `changes`, never a
-diagnostic's `replacement`, to build native edits. `preview` is display data;
-replacing whole native text nodes can destroy formatting.
+The SDK runs one core `review` pass per run: every rule proposes its
+corrections, and each rule's default mode becomes a `suggested` hint (`apply` or
+`review`) on its proposals and on their groups. Diagnostics, including related
+locations, refer to the original run's UTF-16 node coordinates. A proposal
+carries its `groupId` and the `changeIds` of the changes that contain its edits.
+Use `changes`, never a diagnostic's `replacement`, to build native edits.
+`preview` shows every group applied; it is display data, and replacing whole
+native text nodes can destroy formatting.
+
+A group is the unit of acceptance. Its changes are applied together, and the
+changes of any set of groups of one plan apply without conflict. A group whose
+proposals cancel each other has no change; present its diagnostics as
+contradictory. Partial acceptance covers whole groups of the current plan, never
+isolated changes: `validateDocumentPlan` takes the accepted groups as the
+original objects of that plan, each at most once, and rejects copies,
+duplicates, and groups of another plan. The batch lists the accepted groups and,
+for each changed run, its changes and resulting nodes.
+
+To decline a proposal, pass it in the `dismissed` option of the next
+`prepareDocumentPlan` call, designated by `runId`, `ruleId`, and the
+`segmentId`, `start`, and `end` that the previous plan reported. The core
+recomputes the cascade without it and reports it with `dismissed: true` and no
+group. The application keeps its dismissals and updates their ranges when the
+document changes; a dismissal naming an unknown run is rejected. Prepare a new
+plan after each commit: grouping covers local dependencies between rules, not
+distant ones, so a new pass shows proposals that became necessary or obsolete.
 
 Plans and batches are nominal opaque values as well as detached and deeply
 frozen objects. Keep the originals in the same module session: cloned, filtered,
-reconstructed, or deserialized values are rejected. Plan persistence and partial
-acceptance are deliberately outside this first API.
+reconstructed, or deserialized values are rejected. Plan persistence is
+deliberately outside this API.
 
 Validation checks document identity, revision, and the full extracted context:
-run and node order, IDs, locale, text, and protection. It also revalidates every
-change through core. No document is modified by either function. Empty
-corrections produce an empty batch. All changed runs form one indivisible batch.
+run and node order, IDs, locale, text, and protection. It also revalidates the
+accepted changes through core. No document is modified by either function.
+Accepting no group, or only groups without changes, produces an empty batch. All
+changed runs of a batch form one indivisible transaction.
 
 ## In-memory reference adapter
 
@@ -82,15 +112,20 @@ import { createMemoryDocument } from "@orthotypography/editor-sdk";
 const document = createMemoryDocument(source);
 const snapshot = document.read();
 const plan = prepareDocumentPlan(snapshot, IMPRIMERIE_NATIONALE_RULES);
-const batch = validateDocumentPlan(plan, snapshot);
+const batch = validateDocumentPlan(
+  plan,
+  snapshot,
+  plan.runs.flatMap((run) => run.groups),
+);
 const corrected = document.commit(batch);
 ```
 
 `commit` accepts only original batches from this module session and rechecks the
-complete plan against the current state. It stages all runs before swapping the
-state synchronously, so a failure leaves the document unchanged. A nonempty
-batch advances the revision once; an empty batch preserves it but still checks
-for conflicts. Read snapshots are deeply frozen and detached from caller input.
+plan and its accepted groups against the current state. It stages all runs
+before swapping the state synchronously, so a failure leaves the document
+unchanged. A nonempty batch advances the revision once; an empty batch preserves
+it but still checks for conflicts. Read snapshots are deeply frozen and detached
+from caller input.
 
 Use `document.replaceRuns(expectedRevision, runs)` to simulate external text,
 structure, language, or protection edits between validation and commit. Every
@@ -113,7 +148,8 @@ native request payloads from caller-supplied body-text ranges. The companion
 a full Google Docs GET response, including nested tabs. It requires
 `SUGGESTIONS_INLINE`, rejects suggestions and unsupported body structures, and
 takes an explicit locale. Neither module performs network requests. Raw text
-styles are retained on native ranges, outside the editor-neutral snapshot.
+styles are retained on native ranges, outside the editor-neutral snapshot. Both
+compilers take the accepted groups and compile only their changes.
 `previewGoogleDocsStyledRequests` additionally restores source-node styles on
 interior insertions using an explicit reset mask. This opt-in mode requires
 style metadata for every range and rejects links, unsupported properties,
@@ -129,15 +165,16 @@ behind a minimal asynchronous transport interface. The host must provide
 complete inline-suggestions reads and map its provider responses to the explicit
 write result categories. The orchestrator:
 
-- reads and extracts once, prepares one plan, and writes its complete request
-  batch once with the original required revision;
+- reads and extracts once, prepares one plan, accepts every group, and writes
+  the resulting request batch once with the original required revision;
 - returns `revision-conflict` without retrying or reconstructing the stale plan;
 - throws `GoogleDocsTransportFailure` for classified permission,
   invalid-request, transient, and unknown failures;
 - performs one complete readback after a reported success and throws
   `GoogleDocsReadbackError` unless document identity, revision, paragraph text,
-  tab placement, and (in styled mode) source styles reproduce the plan;
-- skips both the write and second read when the plan is unchanged.
+  tab placement, and (in styled mode) source styles reproduce the accepted
+  groups;
+- skips both the write and second read when the accepted groups change nothing.
 
 The interface contains no HTTP client, OAuth flow, provider error parser, retry
 policy, or connector-specific response conversion. In particular, an adapter for
@@ -181,9 +218,10 @@ if (result.status === "revision-conflict") {
 }
 ```
 
-Calling `normalizeGoogleDocsDocument` authorizes the transport to write when the
-prepared plan is nonempty. Applications that require human review can separate
-the two phases without reconstructing any SDK object:
+Calling `normalizeGoogleDocsDocument` authorizes the transport to write every
+group of the prepared plan when it is nonempty. Applications that require human
+review can separate the two phases and accept whole groups without
+reconstructing any SDK object:
 
 ```ts
 import {
@@ -197,26 +235,36 @@ const review = await prepareGoogleDocsReview(
   documentId,
   "fr-FR",
   IMPRIMERIE_NATIONALE_RULES,
-  { preserveStyles: true },
+  // Proposals the user declined earlier, kept by the application.
+  { preserveStyles: true, dismissed },
 );
-// Display review.plan diagnostics and preview here; this has not written.
+// Display review.plan diagnostics, groups, and preview; this has not written.
 // review.mode discriminates text-only and style-preserving request payloads.
-if (accepted) {
-  const outcome = await commitGoogleDocsReview(transport, review);
+if (acceptedGroups.length > 0) {
+  // Original group objects of review.plan, selected by the user.
+  const outcome = await commitGoogleDocsReview(
+    transport,
+    review,
+    acceptedGroups,
+  );
+  // outcome.committed holds the requests written for outcome.accepted.
 } else {
   discardGoogleDocsReview(transport, review);
 }
 ```
 
-Only the original frozen review object can be committed, with the same transport
-instance that read it. A review is consumed before its single write attempt:
-success, conflict, failure, and concurrent calls cannot cause it to be replayed.
-Cloned, reconstructed, deserialized, or already consumed reviews are rejected.
-The review type is nominal, so ordinary TypeScript code cannot reconstruct it
-structurally. Explicitly discard a rejected or closed review to make that
-decision irreversible in the current module session. The server-side revision
-condition remains authoritative if the document changes while the user is
-reviewing.
+`review.preview` compiles every group; a commit compiles only the accepted
+groups, writes them once under the revision that was read, and verifies the
+readback against them. An invalid selection is rejected before the review is
+consumed. Only the original frozen review object can be committed, with the same
+transport instance that read it. A review is consumed before its single write
+attempt: success, conflict, failure, and concurrent calls cannot cause it to be
+replayed. Cloned, reconstructed, deserialized, or already consumed reviews are
+rejected. The review type is nominal, so ordinary TypeScript code cannot
+reconstruct it structurally. Explicitly discard a rejected or closed review to
+make that decision irreversible in the current module session. The server-side
+revision condition remains authoritative if the document changes while the user
+is reviewing.
 
 Every review exposes a stable `mode` discriminant. `"text"` contains only delete
 and insert requests; `"preserve-styles"` may additionally contain supported
@@ -239,7 +287,8 @@ and committing a review preserves its mode in the result type.
   race between reading the snapshot and writing. Also verify native ranges and
   expected text as required by the host. Reject the entire batch on conflict.
 - Preserve styles, structure, selections, and undo semantics. Never commit a
-  subset or retry a stale batch; obtain a new snapshot and prepare a new plan.
+  subset of a batch or retry a stale batch; obtain a new snapshot and prepare a
+  new plan.
 
 If the host cannot guarantee an atomic conditional commit, this contract
 supports preview and diagnostics only until the adapter supplies an equivalent

@@ -1,9 +1,9 @@
 import assert from "node:assert/strict";
 import {
   IMPRIMERIE_NATIONALE_PUNCTUATION_RULES as rules,
-  type RuntimeRule,
 } from "@orthotypography/core";
 import { prepareDocumentPlan } from "../src/mod.ts";
+import { allGroups, syntheticRule } from "./helpers.ts";
 import { extractGoogleDocsBody } from "../src/google-docs-extract.ts";
 import { previewGoogleDocsRequests } from "../src/google-docs.ts";
 import {
@@ -48,19 +48,19 @@ function fixture(style: Record<string, unknown> = {}) {
   return { response, ...extractGoogleDocsBody(response, "fr-FR") };
 }
 
-// A catalogue definition without dependencies, so that a synthetic rule can run
-// alone whatever the order of the core composition.
-const standaloneDefinition =
-  rules.find(({ definition }) =>
-    definition.id === "punctuation.exclamation.nnbsp-before"
-  )!.definition;
 Deno.test("styled preview restores source-node styles after each insertion", () => {
   const { snapshot, ranges } = fixture({ italic: true, bold: false });
   const plan = prepareDocumentPlan(snapshot, rules);
-  const styled = previewGoogleDocsStyledRequests(plan, snapshot, ranges);
+  const styled = previewGoogleDocsStyledRequests(
+    plan,
+    snapshot,
+    ranges,
+    allGroups(plan),
+  );
   assert.deepEqual(
     styled.body.requests.filter((r) => !("updateTextStyle" in r)),
-    previewGoogleDocsRequests(plan, snapshot, ranges).body.requests,
+    previewGoogleDocsRequests(plan, snapshot, ranges, allGroups(plan)).body
+      .requests,
   );
   let updates = 0;
   for (const [i, request] of styled.body.requests.entries()) {
@@ -87,10 +87,12 @@ Deno.test("styled preview restores source-node styles after each insertion", () 
 
 Deno.test("styled preview explicitly resets inherited styles and link state", () => {
   const { snapshot, ranges } = fixture();
+  const plan = prepareDocumentPlan(snapshot, rules);
   const result = previewGoogleDocsStyledRequests(
-    prepareDocumentPlan(snapshot, rules),
+    plan,
     snapshot,
     ranges,
+    allGroups(plan),
   );
   const update = result.body.requests.find((r) => "updateTextStyle" in r)!;
   assert.ok("updateTextStyle" in update);
@@ -102,7 +104,12 @@ Deno.test("styled preview explicitly resets inherited styles and link state", ()
 Deno.test("styled request replay preserves text and node styles across offset shifts", () => {
   const { snapshot, ranges } = fixture({ italic: true });
   const plan = prepareDocumentPlan(snapshot, rules);
-  const preview = previewGoogleDocsStyledRequests(plan, snapshot, ranges);
+  const preview = previewGoogleDocsStyledRequests(
+    plan,
+    snapshot,
+    ranges,
+    allGroups(plan),
+  );
   const characters: { text: string; style: unknown }[] = [{
     text: "\n",
     style: {},
@@ -152,10 +159,12 @@ Deno.test("extracted and generated styles are deeply frozen and detached", () =>
   };
   const { snapshot, ranges } = fixture(style);
   style.foregroundColor.color.rgbColor.red = 0.9;
+  const plan = prepareDocumentPlan(snapshot, rules);
   const preview = previewGoogleDocsStyledRequests(
-    prepareDocumentPlan(snapshot, rules),
+    plan,
     snapshot,
     ranges,
+    allGroups(plan),
   );
   const update = preview.body.requests.find((r) => "updateTextStyle" in r)!;
   assert.ok("updateTextStyle" in update);
@@ -179,20 +188,28 @@ Deno.test("styled preview rejects missing metadata, links and unknown styles", (
     const { snapshot, ranges } = fixture(style);
     const plan = prepareDocumentPlan(snapshot, rules);
     assert.throws(
-      () => previewGoogleDocsStyledRequests(plan, snapshot, ranges),
+      () =>
+        previewGoogleDocsStyledRequests(
+          plan,
+          snapshot,
+          ranges,
+          allGroups(plan),
+        ),
       /Google Docs/,
     );
     assert.doesNotThrow(() =>
-      previewGoogleDocsRequests(plan, snapshot, ranges)
+      previewGoogleDocsRequests(plan, snapshot, ranges, allGroups(plan))
     );
   }
   const { snapshot, ranges } = fixture();
+  const plan = prepareDocumentPlan(snapshot, rules);
   assert.throws(
     () =>
       previewGoogleDocsStyledRequests(
-        prepareDocumentPlan(snapshot, rules),
+        plan,
         snapshot,
         ranges.map((r) => ({ ...r, textStyle: undefined })),
+        allGroups(plan),
       ),
     /Missing/,
   );
@@ -215,16 +232,7 @@ Deno.test("styled preview rejects paragraph boundaries including after earlier d
       revision: "r",
       runs: [{ id: "p", locale: "fr-FR", nodes: [{ id: "n", value: "abc" }] }],
     };
-    let value = "abc";
-    for (const edit of [...edits].reverse()) {
-      value = value.slice(0, edit.start) + edit.replacement +
-        value.slice(edit.end);
-    }
-    const rule: RuntimeRule = {
-      definition: standaloneDefinition,
-      apply: (original, context) =>
-        context.mode === "lint" ? { value: original } : { value, edits },
-    };
+    const rule = syntheticRule(edits);
     const plan = prepareDocumentPlan(snapshot, [rule]);
     const ranges = [{
       runId: "p",
@@ -235,7 +243,13 @@ Deno.test("styled preview rejects paragraph boundaries including after earlier d
       textStyle: {},
     }];
     assert.throws(
-      () => previewGoogleDocsStyledRequests(plan, snapshot, ranges),
+      () =>
+        previewGoogleDocsStyledRequests(
+          plan,
+          snapshot,
+          ranges,
+          allGroups(plan),
+        ),
       /paragraph boundary/,
     );
   }
@@ -245,7 +259,8 @@ Deno.test("styled preview revalidates revisions and leaves empty plans empty", (
   const { snapshot, ranges } = fixture();
   const plan = prepareDocumentPlan(snapshot, []);
   assert.deepEqual(
-    previewGoogleDocsStyledRequests(plan, snapshot, ranges).body.requests,
+    previewGoogleDocsStyledRequests(plan, snapshot, ranges, allGroups(plan))
+      .body.requests,
     [],
   );
   assert.throws(
@@ -254,6 +269,7 @@ Deno.test("styled preview revalidates revisions and leaves empty plans empty", (
         plan,
         { ...snapshot, revision: "new" },
         ranges,
+        allGroups(plan),
       ),
     /Stale/,
   );

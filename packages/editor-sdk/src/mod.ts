@@ -1,5 +1,6 @@
 import {
   applyTextChanges,
+  type DismissedProposal,
   type RuleDiagnostic,
   runTextNodePipeline,
   type RuntimeRule,
@@ -25,11 +26,48 @@ export interface DocumentSnapshot {
   readonly runs: readonly DocumentRun[];
 }
 
-/** Source diagnostics and the complete correction for one run. */
+/**
+ * Proposal declined by the host, designated by its run and by the rule and
+ * source location that a previous plan reported for it. The host keeps its
+ * dismissals and updates their ranges when the document changes.
+ */
+export interface DocumentDismissal extends DismissedProposal {
+  readonly runId: string;
+}
+
+export interface DocumentPlanOptions {
+  /** Proposals to leave unapplied; the cascade is computed without them. */
+  readonly dismissed?: readonly DocumentDismissal[];
+}
+
+/**
+ * Unit of acceptance of a planned run. Its changes are applied together, and
+ * the changes of any set of groups of one plan apply without conflict.
+ */
+export interface PlannedGroup {
+  readonly runId: string;
+  /** Core group ID, unique within its run. */
+  readonly id: string;
+  /** IDs of the run's changes; empty when its proposals cancel each other. */
+  readonly changeIds: readonly string[];
+  /** Indexes of the group's proposals in the run's diagnostics. */
+  readonly diagnostics: readonly number[];
+  /** Whether every proposal comes from a rule whose default mode is `fix`. */
+  readonly suggested: boolean;
+}
+
+/** Source diagnostics, proposal groups, and their changes for one run. */
 export interface PlannedRun {
   readonly id: string;
+  /**
+   * Source diagnostics. Proposals carry `groupId`, `changeIds`, and
+   * `suggested`; dismissed proposals carry `dismissed` and no group.
+   */
   readonly diagnostics: readonly RuleDiagnostic[];
+  /** Changes of every group, in source order. */
   readonly changes: readonly TextChange[];
+  readonly groups: readonly PlannedGroup[];
+  /** Nodes once every group is applied. */
   readonly preview: readonly TextNodeOutput[];
 }
 
@@ -37,6 +75,7 @@ export interface PlannedRun {
 export interface DocumentPlan {
   readonly [documentPlanBrand]: true;
   readonly source: DocumentSnapshot;
+  readonly dismissed: readonly DocumentDismissal[];
   readonly runs: readonly PlannedRun[];
 }
 
@@ -44,18 +83,30 @@ export interface DocumentPlan {
 export interface DocumentBatchRun {
   readonly id: string;
   readonly changes: readonly TextChange[];
+  /** Nodes of the run once these changes are applied. */
+  readonly preview: readonly TextNodeOutput[];
 }
 
-/** Opaque batch whose runs must be committed together against expectedRevision. */
+/**
+ * Opaque batch of accepted groups whose changed runs must be committed together
+ * against expectedRevision.
+ */
 export interface DocumentBatch {
   readonly [documentBatchBrand]: true;
   readonly documentId: string;
   readonly expectedRevision: string;
+  /** Accepted groups, in plan order. */
+  readonly groups: readonly PlannedGroup[];
   readonly runs: readonly DocumentBatchRun[];
 }
 
+interface BatchOrigin {
+  readonly plan: DocumentPlan;
+  readonly accepted: readonly PlannedGroup[];
+}
+
 const plans = new WeakSet<DocumentPlan>();
-const batches = new WeakMap<DocumentBatch, DocumentPlan>();
+const batches = new WeakMap<DocumentBatch, BatchOrigin>();
 
 function freeze<T>(value: T): T {
   if (value !== null && typeof value === "object") {
@@ -114,36 +165,83 @@ function copySnapshot(source: DocumentSnapshot): DocumentSnapshot {
   });
 }
 
-/** Runs lint and fix separately on a detached, immutable source snapshot. */
+function copyDismissals(
+  snapshot: DocumentSnapshot,
+  dismissed: readonly DocumentDismissal[],
+): readonly DocumentDismissal[] {
+  const runIds = new Set(snapshot.runs.map((run) => run.id));
+  return dismissed.map((entry) => {
+    if (!runIds.has(entry.runId)) {
+      throw new Error(`Unknown run in dismissed proposal: ${entry.runId}`);
+    }
+    return {
+      runId: entry.runId,
+      ruleId: entry.ruleId,
+      ...(entry.segmentId === undefined ? {} : { segmentId: entry.segmentId }),
+      ...(entry.segmentIndex === undefined
+        ? {}
+        : { segmentIndex: entry.segmentIndex }),
+      start: entry.start,
+      end: entry.end,
+    };
+  });
+}
+
+/**
+ * Runs one `review` pass per run on a detached, immutable source snapshot.
+ * Every rule proposes its changes; each rule's default mode becomes the
+ * `suggested` hint of its proposals and groups.
+ */
 export function prepareDocumentPlan(
   source: DocumentSnapshot,
   rules: readonly RuntimeRule[],
+  options: DocumentPlanOptions = {},
 ): DocumentPlan {
   const snapshot = copySnapshot(source);
+  const dismissed = copyDismissals(snapshot, options.dismissed ?? []);
   const runs = snapshot.runs.map((run): PlannedRun => {
-    const lint = runTextNodePipeline(run.nodes, rules, {
+    const result = runTextNodePipeline(run.nodes, rules, {
       locale: run.locale,
-      mode: "lint",
-    });
-    const fix = runTextNodePipeline(run.nodes, rules, {
-      locale: run.locale,
-      mode: "fix",
+      mode: "review",
+      dismissed: dismissed.filter((entry) => entry.runId === run.id).map((
+        { runId: _, ...entry },
+      ) => entry),
     });
     // Validate the complete set before exposing a preview to an adapter.
-    const applied = applyTextChanges(run.nodes, fix.changes);
-    if (applied.some((node, index) => node.value !== fix.nodes[index]?.value)) {
+    const applied = applyTextChanges(run.nodes, result.changes);
+    if (
+      applied.some((node, index) => node.value !== result.nodes[index]?.value)
+    ) {
       throw new Error(`Changes do not reproduce preview for run ${run.id}`);
+    }
+    // Each change must belong to exactly one group to be accepted at all.
+    const grouped = new Set(result.groups.flatMap((group) => group.changeIds));
+    if (
+      grouped.size !== result.changes.length ||
+      result.groups.reduce((n, group) => n + group.changeIds.length, 0) !==
+        grouped.size ||
+      result.changes.some((change) => !grouped.has(change.id))
+    ) {
+      throw new Error(`Inconsistent proposal groups for run ${run.id}`);
     }
     return {
       id: run.id,
-      diagnostics: lint.diagnostics,
-      changes: fix.changes,
-      preview: fix.nodes,
+      diagnostics: result.diagnostics,
+      changes: result.changes,
+      groups: result.groups.map((group) => ({
+        runId: run.id,
+        id: group.id,
+        changeIds: group.changeIds,
+        diagnostics: group.diagnostics,
+        suggested: group.suggested === true,
+      })),
+      preview: result.nodes,
     };
   });
   const plan: DocumentPlan = freeze({
     [documentPlanBrand]: true,
     source: snapshot,
+    dismissed,
     runs,
   });
   plans.add(plan);
@@ -151,12 +249,15 @@ export function prepareDocumentPlan(
 }
 
 /**
- * Validates the entire source and returns a complete batch without writing.
- * The adapter must recheck the revision inside its native atomic transaction.
+ * Validates the entire source and returns the batch of the accepted groups
+ * without writing. Groups are accepted whole, as the original objects of this
+ * plan; a partial batch never contains isolated changes. The adapter must
+ * recheck the revision inside its native atomic transaction.
  */
 export function validateDocumentPlan(
   plan: DocumentPlan,
   current: DocumentSnapshot,
+  accepted: readonly PlannedGroup[],
 ): DocumentBatch {
   if (!plans.has(plan)) {
     throw new Error(
@@ -175,22 +276,49 @@ export function validateDocumentPlan(
   if (JSON.stringify(snapshot) !== JSON.stringify(plan.source)) {
     throw new Error("Document context changed; prepare a new plan");
   }
+  const selected = new Set<PlannedGroup>();
+  for (const group of accepted) {
+    if (selected.has(group)) {
+      throw new Error(`Duplicate accepted group: ${group.runId}/${group.id}`);
+    }
+    selected.add(group);
+  }
+  const known = plan.runs.flatMap((run) => run.groups);
+  const groups = known.filter((group) => selected.has(group));
+  if (groups.length !== selected.size) {
+    throw new Error(
+      "Unknown proposal group; accept whole groups of this plan",
+    );
+  }
   const runs = plan.runs.map((run, index): DocumentBatchRun => {
-    applyTextChanges(snapshot.runs[index].nodes, run.changes);
+    const changeIds = new Set(
+      run.groups.filter((group) => selected.has(group)).flatMap((group) =>
+        group.changeIds
+      ),
+    );
+    const changes = run.changes.filter((change) => changeIds.has(change.id));
+    const nodes = snapshot.runs[index].nodes;
+    const applied = applyTextChanges(nodes, changes);
     return {
       id: run.id,
-      changes: [...run.changes].sort((a, b) =>
+      changes: [...changes].sort((a, b) =>
         b.segmentIndex - a.segmentIndex || b.start - a.start || b.end - a.end
       ),
+      preview: nodes.map((node, nodeIndex) => ({
+        id: node.id,
+        value: applied[nodeIndex].value,
+        ...(node.protected === undefined ? {} : { protected: node.protected }),
+      })),
     };
   }).filter((run) => run.changes.length > 0);
   const batch: DocumentBatch = freeze({
     [documentBatchBrand]: true,
     documentId: snapshot.documentId,
     expectedRevision: snapshot.revision,
+    groups,
     runs,
   });
-  batches.set(batch, plan);
+  batches.set(batch, { plan, accepted: groups });
   return batch;
 }
 
@@ -198,7 +326,7 @@ export function validateDocumentPlan(
 export interface MemoryDocument {
   /** Returns a detached-from-input, deeply frozen snapshot. */
   read(): DocumentSnapshot;
-  /** Revalidates and commits a complete, original SDK batch synchronously. */
+  /** Revalidates and commits an original SDK batch synchronously. */
   commit(batch: DocumentBatch): DocumentSnapshot;
   /** Simulates an external edit, including structure and protection changes. */
   replaceRuns(
@@ -244,13 +372,13 @@ export function createMemoryDocument(
   return Object.freeze({
     read: () => current,
     commit(batch: DocumentBatch): DocumentSnapshot {
-      const plan = batches.get(batch);
-      if (!plan) {
+      const origin = batches.get(batch);
+      if (!origin) {
         throw new Error(
           "Unknown document batch; validate a plan in this session",
         );
       }
-      validateDocumentPlan(plan, current);
+      validateDocumentPlan(origin.plan, current, origin.accepted);
       if (batch.runs.length === 0) return current;
       const changes = new Map(batch.runs.map((run) => [run.id, run.changes]));
       const runs = current.runs.map((run) => ({

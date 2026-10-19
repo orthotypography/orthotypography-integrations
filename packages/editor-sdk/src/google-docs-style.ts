@@ -1,4 +1,9 @@
-import type { DocumentPlan, DocumentSnapshot } from "./mod.ts";
+import {
+  type DocumentPlan,
+  type DocumentSnapshot,
+  type PlannedGroup,
+  validateDocumentPlan,
+} from "./mod.ts";
 import {
   type GoogleDocsNodeRange,
   type GoogleDocsTextRequest,
@@ -127,7 +132,8 @@ export interface GoogleDocsStyledPreview {
 }
 
 /**
- * Restores each insertion's source-node style, including inherited properties.
+ * Compiles the accepted groups of a plan and restores each insertion's
+ * source-node style, including inherited properties.
  * Requires full style metadata on every range. Links and insertions touching a
  * paragraph boundary are rejected until their native side effects are tested.
  * Styles and ranges must come from the same complete GET as the snapshot.
@@ -136,34 +142,36 @@ export function previewGoogleDocsStyledRequests(
   plan: DocumentPlan,
   current: DocumentSnapshot,
   nativeRanges: readonly GoogleDocsNodeRange[],
+  accepted: readonly PlannedGroup[],
 ): GoogleDocsStyledPreview {
   const ranges = nativeRanges.map((range) => ({
     ...range,
     textStyle: copyGoogleDocsTextStyle(range.textStyle),
   }));
-  const preview = previewGoogleDocsRequests(plan, current, ranges);
+  const preview = previewGoogleDocsRequests(plan, current, ranges, accepted);
+  const batch = validateDocumentPlan(plan, current, accepted);
   const byNode = new Map(
     ranges.map((r) => [JSON.stringify([r.runId, r.nodeId]), r]),
   );
   for (const range of ranges) validateGoogleDocsTextStyle(range.textStyle);
   const insertions = new Map<string, GoogleDocsTextStyle>();
   const paragraphs: { tabId: string; start: number; end: number }[] = [];
-  for (const run of plan.runs) {
-    const source = plan.source.runs.find((r) => r.id === run.id)!;
+  for (const source of plan.source.runs) {
     if (!source.nodes.length) continue;
-    const first = byNode.get(JSON.stringify([run.id, source.nodes[0].id]))!;
+    const run = batch.runs.find((r) => r.id === source.id);
+    const first = byNode.get(JSON.stringify([source.id, source.nodes[0].id]))!;
     const last = byNode.get(
-      JSON.stringify([run.id, source.nodes[source.nodes.length - 1].id]),
+      JSON.stringify([source.id, source.nodes[source.nodes.length - 1].id]),
     )!;
     paragraphs.push({
       tabId: first.tabId,
       start: first.startIndex,
       end: last.endIndex,
     });
-    for (const change of run.changes) {
+    for (const change of run?.changes ?? []) {
       if (!change.replacement.length) continue;
       const range = byNode.get(
-        JSON.stringify([run.id, source.nodes[change.segmentIndex].id]),
+        JSON.stringify([source.id, source.nodes[change.segmentIndex].id]),
       )!;
       const start = range.startIndex + change.start;
       const end = range.startIndex + change.end;

@@ -46,16 +46,19 @@ const ranges = [{
   endIndex: 10,
 }];
 const plan = prepareDocumentPlan(snapshot, IMPRIMERIE_NATIONALE_RULES);
-const preview = previewGoogleDocsRequests(plan, snapshot, ranges);
+// Groupes acceptés : ici, tous les groupes du plan.
+const accepted = plan.runs.flatMap((run) => run.groups);
+const preview = previewGoogleDocsRequests(plan, snapshot, ranges, accepted);
 // Examiner preview.body.requests et preview.body.writeControl.
 ```
 
-L'appel revalide le plan complet. La table doit couvrir exactement ses nœuds,
-avec les longueurs UTF-16 correspondantes, sans doublon ni chevauchement. Les
-nœuds d'une suite doivent être contigus dans un même onglet. L'ordre des suites
-fournies n'a pas besoin d'être l'ordre natif. Les identifiants de nœuds restent
-locaux à chaque suite. Le résultat est profondément figé. Un plan sans
-correction produit une liste vide ; aucun appel distant n'est nécessaire.
+L'appel revalide le plan et ne compile que les changements des groupes acceptés.
+La table doit couvrir exactement ses nœuds, avec les longueurs UTF-16
+correspondantes, sans doublon ni chevauchement. Les nœuds d'une suite doivent
+être contigus dans un même onglet. L'ordre des suites fournies n'a pas besoin
+d'être l'ordre natif. Les identifiants de nœuds restent locaux à chaque suite.
+Le résultat est profondément figé. Un plan sans correction produit une liste
+vide ; aucun appel distant n'est nécessaire.
 
 Le périmètre initial est le texte non vide du corps, à l'intérieur de
 paragraphes. L'extracteur doit exclure les terminateurs de paragraphes et
@@ -110,7 +113,8 @@ import { extractGoogleDocsBody } from "@orthotypography/editor-sdk/google-docs";
 // response : réponse complète de documents.get obtenue par le futur transport.
 const { snapshot, ranges } = extractGoogleDocsBody(response, "fr-FR");
 const plan = prepareDocumentPlan(snapshot, IMPRIMERIE_NATIONALE_RULES);
-const preview = previewGoogleDocsRequests(plan, snapshot, ranges);
+const accepted = plan.runs.flatMap((run) => run.groups);
+const preview = previewGoogleDocsRequests(plan, snapshot, ranges, accepted);
 ```
 
 Le transport reçoit l'obligation de demander `includeTabsContent=true` et
@@ -155,7 +159,12 @@ Références officielles vérifiées le 6 septembre 2026 :
 ```ts
 import { previewGoogleDocsStyledRequests } from "@orthotypography/editor-sdk/google-docs";
 
-const styledPreview = previewGoogleDocsStyledRequests(plan, snapshot, ranges);
+const styledPreview = previewGoogleDocsStyledRequests(
+  plan,
+  snapshot,
+  ranges,
+  accepted,
+);
 ```
 
 Ce mode conserve le lot textuel et ajoute immédiatement après chaque insertion
@@ -257,15 +266,21 @@ finale et l'absence du jeton dans le corps JSON. Ce test valide la composition
 et la sérialisation, pas l'accès réseau, le flux OAuth ou une nouvelle exécution
 contre le service Google.
 
-L'appel à `normalizeGoogleDocsDocument` constitue une demande d'écriture lorsque
-le plan n'est pas vide. Pour une revue humaine, `prepareGoogleDocsReview`
-effectue seulement la lecture, l'extraction et la prévisualisation ;
-`commitGoogleDocsReview` reçoit ensuite le même objet après acceptation
-explicite. Seul l'objet original, figé et associé à l'instance de transport qui
-l'a lu, est accepté. Les clones, reconstructions et objets désérialisés sont
-refusés. Le type nominal empêche également une reconstruction structurelle en
-TypeScript. Lors d'un refus ou de la fermeture de l'interface,
-`discardGoogleDocsReview` consomme explicitement la revue sans aucune écriture.
+L'appel à `normalizeGoogleDocsDocument` constitue une demande d'écriture de tous
+les groupes lorsque le plan n'est pas vide. Pour une revue humaine,
+`prepareGoogleDocsReview` effectue seulement la lecture, l'extraction, le plan
+et la prévisualisation de tous les groupes ; l'option `dismissed` y transmet les
+corrections écartées. `commitGoogleDocsReview` reçoit ensuite le même objet et
+les groupes acceptés par l'utilisateur : il compile leurs seules requêtes,
+exposées dans `committed` avec `accepted`, les écrit en une fois sous la
+révision lue et vérifie la relecture contre ces seuls groupes. Une sélection
+invalide est refusée avant que la revue soit consommée ; une sélection vide
+consomme la revue sans écriture. Seul l'objet original, figé et associé à
+l'instance de transport qui l'a lu, est accepté. Les clones, reconstructions et
+objets désérialisés sont refusés. Le type nominal empêche également une
+reconstruction structurelle en TypeScript. Lors d'un refus ou de la fermeture de
+l'interface, `discardGoogleDocsReview` consomme explicitement la revue sans
+aucune écriture.
 
 Une revue est consommée avant son unique tentative d'écriture. Une réussite, un
 conflit, un autre échec ou deux appels concurrents ne peuvent donc pas rejouer

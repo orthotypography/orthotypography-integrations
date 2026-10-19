@@ -55,8 +55,14 @@ not introduce a model service into the normalization engine.
   dedicated `./google-docs` entry point.
 - Validate full snapshot context and revision. Recheck the revision inside the
   native atomic transaction; preflight validation alone cannot prevent races.
-- Preserve complete batches and nominal, immutable plan/review objects. Do not
-  silently support partial acceptance, reconstruction, replay, or stale retries.
+- Preserve nominal, immutable plan/review objects and atomic batches. Partial
+  acceptance covers whole proposal groups of the current plan, passed as its
+  original group objects, never isolated changes; the batch of accepted groups
+  stays atomic and is revalidated inside the native transaction. Do not support
+  reconstruction, replay, or stale retries.
+- Dismissed proposals belong to the client application, which keeps them and
+  updates their ranges; the SDK only passes them to the core pass. Google Docs
+  run IDs, styles, and transports stay in the `./google-docs` entry point.
 - Reject unsupported native structures and style operations explicitly. Keep
   live validation claims bounded by the recorded scenarios.
 - Credential acquisition, refresh, and storage belong to the host application.

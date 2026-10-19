@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { IMPRIMERIE_NATIONALE_PUNCTUATION_RULES as rules } from "@orthotypography/core";
 import { prepareDocumentPlan } from "../src/mod.ts";
+import { allGroups } from "./helpers.ts";
 import { previewGoogleDocsRequests } from "../src/google-docs.ts";
 import { extractGoogleDocsBody } from "../src/google-docs-extract.ts";
 
@@ -54,7 +55,12 @@ Deno.test("Google Docs extraction connects a GET fixture to native request previ
     18,
   ]]);
   const plan = prepareDocumentPlan(snapshot, rules);
-  const preview = previewGoogleDocsRequests(plan, snapshot, ranges);
+  const preview = previewGoogleDocsRequests(
+    plan,
+    snapshot,
+    ranges,
+    allGroups(plan),
+  );
   let body = "\n😀 Bonjour :suite\n\n";
   for (const request of preview.body.requests) {
     if ("deleteContentRange" in request) {
@@ -85,12 +91,9 @@ Deno.test("Google Docs nested tabs have independent native coordinates and uniqu
     "child",
     "sibling",
   ]);
+  const plan = prepareDocumentPlan(snapshot, rules);
   assert.doesNotThrow(() =>
-    previewGoogleDocsRequests(
-      prepareDocumentPlan(snapshot, rules),
-      snapshot,
-      ranges,
-    )
+    previewGoogleDocsRequests(plan, snapshot, ranges, allGroups(plan))
   );
   Object.assign(response.tabs[0], { childTabs: [tab("root")] });
   assert.throws(() => extractGoogleDocsBody(response, "fr-FR"), /Duplicate/);
@@ -198,12 +201,9 @@ Deno.test("Google Docs newline-only final text run creates no empty mapped node"
   const { snapshot, ranges } = extractGoogleDocsBody(response, "fr-FR");
   assert.equal(snapshot.runs[0].nodes.length, 1);
   assert.equal(ranges[0].endIndex, 10);
+  const plan = prepareDocumentPlan(snapshot, rules);
   assert.doesNotThrow(() =>
-    previewGoogleDocsRequests(
-      prepareDocumentPlan(snapshot, rules),
-      snapshot,
-      ranges,
-    )
+    previewGoogleDocsRequests(plan, snapshot, ranges, allGroups(plan))
   );
 });
 
