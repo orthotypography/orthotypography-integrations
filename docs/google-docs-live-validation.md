@@ -97,10 +97,151 @@ identifiants fournis par l'application hôte. Le SDK a depuis été publié en
 
 ## Portée après le passage au cœur `0.1.0-alpha.3`
 
-Ce compte rendu reste attaché au cœur `0.1.0-alpha.2`. Avec
-`0.1.0-alpha.3`, l'espace après un point d'exclamation devient une correction
-atomique distincte : les fixtures hors ligne de ce scénario produisent neuf
-corrections et 26 requêtes au lieu de huit et 24, pour un texte planifié
-toujours identique à la relecture réelle, styles compris. Ce lot de 26 requêtes
-n'a pas été exécuté dans Google Docs ; seule la validation hors ligne couvre le
-SDK `0.1.0-alpha.1`.
+Ce compte rendu reste attaché au cœur `0.1.0-alpha.2`. Avec `0.1.0-alpha.3`,
+l'espace après un point d'exclamation devient une correction atomique distincte
+: les fixtures hors ligne de ce scénario produisent neuf corrections et 26
+requêtes au lieu de huit et 24, pour un texte planifié toujours identique à la
+relecture réelle, styles compris. Ce lot de 26 requêtes n'a pas été exécuté dans
+Google Docs ; seule la validation hors ligne couvre le SDK `0.1.0-alpha.1`.
+
+## Ligne `0.2` : procédure de validation par le transport REST
+
+La passe `review`, l'acceptation par groupes et les corrections écartées (PR nº
+9 et 10) n'ont pas encore été exécutées dans Google Docs. Le script
+[`packages/editor-sdk/live/google_docs_rest_check.ts`](../packages/editor-sdk/live/google_docs_rest_check.ts)
+les déroule par `createGoogleDocsRestTransport`, sans connecteur, sur un
+document jetable :
+
+1. préparation : le document doit porter un titre commençant par
+   `orthotypography-live-check` et ne contenir qu'un paragraphe vide dans un
+   seul onglet ; sinon le script s'arrête sans écrire. Il y insère trois
+   paragraphes de test, dont un mot en gras ;
+2. passe `review` sans écriture : groupes, indications `suggested` (la règle de
+   l'euro, en mode `review`, donne un groupe non suggéré) ;
+3. commit partiel : tous les groupes du premier paragraphe, le premier du
+   deuxième, aucun du troisième ; relecture vérifiée par le SDK ;
+4. correction écartée dans le troisième paragraphe, puis commit avec
+   restauration des styles de tous les autres groupes ;
+5. conservation de la correction écartée par le client, qui en recalcule les
+   identifiants natifs et les décalages après l'écriture : plus aucune requête ;
+6. deux revues de la même révision : la première s'applique, la seconde est
+   refusée en conflit de révision et le document reste inchangé ;
+7. idempotence de la dernière passe.
+
+Le jeton d'accès (portée `https://www.googleapis.com/auth/documents`) est fourni
+par la personne qui exécute le script, comme le ferait une application hôte ; le
+script ne l'affiche, ne l'enregistre ni ne le renouvelle. Le rapport JSON, écrit
+dans `packages/editor-sdk/live-report.json` (ignoré par Git) et sur la sortie
+standard, ne contient ni identifiant de document, ni révision, ni jeton. Depuis
+une copie de la branche qui contient le script :
+
+```sh
+cd packages/editor-sdk
+./live/run.sh
+```
+
+Le lanceur demande l'URL ou l'identifiant du document, puis le jeton sans
+l'afficher. Un jeton de l'OAuth 2.0 Playground expire au bout d'une heure ; un
+jeton sans la portée requise produit un échec `permission` consigné dans le
+rapport.
+
+Le test hors ligne `tests/google_docs_live_check_test.ts` exécute ce même
+scénario contre un service Google Docs simulé en mémoire, au niveau HTTP ; il
+valide la logique du script, pas le comportement réel du service. Les deux
+exécutions réelles sont consignées ci-dessous.
+
+### Première exécution réelle, 19 octobre 2026 : partielle
+
+Le script a été exécuté une première fois le 19 octobre à 10 h 33 UTC, sous Deno
+2.9.7, depuis la branche de la PR nº 12, avec le cœur épinglé `71d23ea`, sur un
+document jetable et un jeton fourni par la personne qui l'a lancé. Le rapport
+s'arrête à l'étape 4 ; le document n'a plus été modifié ensuite.
+
+- **Préparation et passe `review` (étapes 1 et 2), validées.** Onze groupes sur
+  les trois paragraphes, dont un non suggéré (règle de l'euro), chacun avec au
+  moins un changement.
+- **Commit partiel (étape 3), validé.** Six groupes acceptés sur onze ; 9
+  requêtes envoyées au lieu des 17 de la prévisualisation complète ; relecture
+  vérifiée par le SDK, troisième paragraphe intact.
+- **Correction écartée et commit avec styles (étape 4, première moitié),
+  validés.** La correction de `quotes.french.nbsp-inner` après `«` est rapportée
+  écartée et sort de la cascade ; 11 requêtes, dont 4 restaurations de style ;
+  relecture vérifiée par le SDK, styles compris.
+- **Conservation de la correction écartée (étape 4, seconde moitié), en échec.**
+  La passe suivante propose encore des changements.
+
+C'est aussi la première écriture réelle par `createGoogleDocsRestTransport` :
+lectures complètes, `batchUpdate` conditionnés par `requiredRevisionId` et
+relectures ont réussi. La classification d'un conflit de révision par ce
+transport (étape 5) et l'idempotence finale (étape 6) restent à exécuter.
+
+**Cause de l'échec : un défaut du cœur, pas du SDK.** Après le commit, l'export
+HTML du document, obtenu en lecture par le connecteur Google Drive, montre que
+Google a conservé l'espace fine insérée avant `;` comme un segment distinct,
+entre `monde` (gras) et `; cela coûte…`. Sur cette structure, le cœur `71d23ea`
+propose de supprimer l'espace fine de son segment et de la réinsérer au début du
+segment suivant : le texte ne change pas, seul le segment qui porte l'espace
+change. Le même texte en un segment de moins ne produit aucune proposition. Le
+défaut se reproduit hors ligne avec les quatre règles
+`punctuation.{semicolon,question,exclamation}.nnbsp-before` et
+`punctuation.colon.nbsp-before`, dès que l'espace correcte n'est pas dans le
+segment du signe ; les espaces des guillemets, de l'euro et du pourcentage ne
+sont pas concernées. Le cœur n'est donc pas idempotent sur des segments que
+Google peut produire seul, et le SDK enverrait à chaque passe une suppression et
+une insertion qui peuvent changer le style de l'espace. Le simulateur du test
+hors ligne fusionne les segments de même style et ne reproduit pas ce cas.
+
+Le simulateur du test hors ligne peut désormais garder chaque insertion dans son
+propre segment, comme Google l'a fait. Dans ce mode, il a révélé un second
+défaut du cœur, antérieur au premier : une espace insécable correcte à
+l'intérieur de guillemets, placée dans un segment voisin, recevait une seconde
+espace (`«` · espace insécable · `oui` devenait `«  oui`), ce qui altérait le
+texte (anomalie nº 66 du cœur). Les deux défauts sont corrigés au commit
+`4e440e5` du cœur (PR nº 64 et 67), sur lequel les deux voies sont épinglées ;
+le scénario passe hors ligne dans les deux modes du simulateur.
+
+Le script détaille désormais, en cas d'échec de ces étapes, les propositions
+restantes et les segments de chaque paragraphe concerné.
+
+### Seconde exécution réelle, 19 octobre 2026 : complète
+
+Le script a été exécuté de nouveau le 19 octobre à 12 h 38 UTC, sous Deno 2.9.7,
+depuis la branche de la PR nº 12 avec le cœur épinglé `4e440e5`, sur un nouveau
+document jetable et avec un nouveau jeton fourni par la personne qui l'a lancé.
+Les sept étapes ont réussi (`ok: true`) :
+
+- passe `review` : onze groupes, dont un non suggéré (règle de l'euro) ;
+- commit partiel de six groupes sur onze : 9 requêtes au lieu de 17, relecture
+  vérifiée ;
+- correction de `quotes.french.nbsp-inner` écartée, puis commit avec
+  restauration des styles des autres groupes : 11 requêtes, dont 4 restaurations
+  de style, relecture vérifiée styles compris ;
+- conservation de la correction écartée après l'écriture, une fois ses
+  identifiants natifs et ses décalages recalculés : aucune requête, revue
+  consommée sans écriture (`unchanged`) ;
+- deux revues de la même révision : la première appliquée, la seconde refusée en
+  `revision-conflict` par Google et classée comme telle par le transport REST,
+  le document restant inchangé après le refus ;
+- dernière passe idempotente : aucun groupe.
+
+Le texte final des trois paragraphes est celui attendu par le scénario, avec les
+espaces insécables et fines prescrites. Le rapport ne contient ni identifiant de
+document, ni révision, ni jeton.
+
+Cette exécution valide en conditions réelles, pour ce scénario de trois
+paragraphes dans un seul onglet : la passe `review` et ses indications
+`suggested`, l'acceptation par groupes entiers, une correction écartée conservée
+par le client, la restauration limitée des styles, et le transport
+`createGoogleDocsRestTransport` (lecture complète, écriture conditionnée par
+`requiredRevisionId`, relecture, classification d'un conflit de révision réel).
+Elle ne couvre ni plusieurs onglets, ni un second utilisateur simultané, ni les
+structures et styles déjà exclus ; elle porte sur une dépendance de
+développement du cœur et devra être vérifiée rapidement avec le cœur `0.2`
+publié.
+
+Les identifiants de suites et de nœuds de l'extracteur sont des indices natifs
+absolus : toute écriture antérieure les déplace. Une application qui conserve
+des corrections écartées doit donc les rattacher à une position stable (ici,
+rang du paragraphe et du segment, décalages dans le segment) et les résoudre de
+nouveau sur chaque lecture. Le script le fait explicitement ; ce point sera à
+reprendre dans la conception de l'application cliente de référence.
