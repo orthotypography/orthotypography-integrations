@@ -1,13 +1,19 @@
 # Feuille de route des intégrations
 
 État vérifié le 19 octobre 2026 sur
-[`c14dd25`](https://github.com/orthotypography/orthotypography-integrations/commit/c14dd25),
-après la fusion des PR nº 4 à 7. Les adaptateurs `0.1.0-alpha.2` et le SDK
-`0.1.0-alpha.1`, tous deux sur le cœur `0.1.0-alpha.3`, ont fait l'objet des
-releases GitHub du 26 septembre ; leur présence sur npm (tag `latest`) est
-vérifiée, celle sur JSR ne l'a pas été à cette date. Le cœur prépare sa ligne
-`0.2`, non publiée (§ « Passage au cœur 0.2 »). Les tâches ci-dessous sont
-proposées, sans engagement de date.
+[`0a3ee14`](https://github.com/orthotypography/orthotypography-integrations/commit/0a3ee14),
+après la fusion des
+[PR nº 8](https://github.com/orthotypography/orthotypography-integrations/pull/8),
+[nº 9](https://github.com/orthotypography/orthotypography-integrations/pull/9)
+et
+[nº 10](https://github.com/orthotypography/orthotypography-integrations/pull/10).
+Les deux voies sont développées sur `main` contre le commit `71d23ea` du cœur,
+et la CI de `main` passe (`test`, `npm-package`, `editor-sdk`). Les adaptateurs
+`0.1.0-alpha.2` et le SDK `0.1.0-alpha.1`, tous deux sur le cœur
+`0.1.0-alpha.3`, ont fait l'objet des releases GitHub du 26 septembre ; leur
+présence sur npm (tag `latest`) est vérifiée, celle sur JSR ne l'a pas été à
+cette date. Le cœur prépare sa ligne `0.2`, non publiée (§ « Passage au
+cœur 0.2 »). Les tâches ci-dessous sont proposées, sans engagement de date.
 
 ## État acquis
 
@@ -60,12 +66,12 @@ publiée sur instruction explicite. Une voie épinglée sur un commit ne peut ê
 ni empaquetée ni publiée ; la CI saute ses contrôles JSR et npm
 ([`CONTRIBUTING.md`](../CONTRIBUTING.md#trying-an-unreleased-engine)).
 
-| Étape | Voie        | Contenu                                                                                                                                                                                                                  | État                                    |
-| ----- | ----------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | --------------------------------------- |
-| 1     | Adaptateurs | Commit `71d23ea` (`main` du cœur après la PR nº 58) ; diagnostics toujours en coordonnées sources, `coordinateSpace` et `segmentRevision` retirés de `AdapterDiagnostic` ; application tout ou rien, groupes non exposés | implémenté, testé hors ligne            |
-| 2     | SDK         | Commit `71d23ea`, comme les adaptateurs ; passe unique `review`, groupes exposés par le plan, validation et commit Google Docs par groupes entiers, propositions écartées transmises au cœur                             | implémenté, testé hors ligne            |
-| 3     | Les deux    | Passage au cœur `0.2` publié, puis releases des deux voies                                                                                                                                                               | sur instruction explicite               |
-| 4     | SDK         | Validation réelle dans Google Docs de la passe `review` et de l'acceptation par groupes, avec le cœur `0.2`                                                                                                              | à faire, distincte des tests hors ligne |
+| Étape | Voie        | Contenu                                                                                                                                                                                                                                                      | État                                                                                                                                                                                                                         |
+| ----- | ----------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1     | Adaptateurs | Commit `71d23ea` (`main` du cœur après la PR nº 58) ; diagnostics toujours en coordonnées sources, `coordinateSpace` et `segmentRevision` retirés de `AdapterDiagnostic` ; application tout ou rien, groupes non exposés                                     | fusionné ([PR nº 8](https://github.com/orthotypography/orthotypography-integrations/pull/8)), testé hors ligne                                                                                                               |
+| 2     | SDK         | Commit `71d23ea`, comme les adaptateurs ; passe unique `review`, groupes exposés par le plan, validation et commit Google Docs par groupes entiers, propositions écartées transmises au cœur                                                                 | fusionné ([PR nº 9](https://github.com/orthotypography/orthotypography-integrations/pull/9), portée sur `main` par la [PR nº 10](https://github.com/orthotypography/orthotypography-integrations/pull/10)), testé hors ligne |
+| 3     | Les deux    | Passage au cœur `0.2` publié, puis releases des deux voies                                                                                                                                                                                                   | sur instruction explicite                                                                                                                                                                                                    |
+| 4     | SDK         | Validation réelle dans Google Docs de la passe `review`, de l'acceptation par groupes, d'une correction écartée et du transport REST direct, sur le commit de développement avant la publication du cœur, puis vérification rapide avec le cœur `0.2` publié | autorisée le 19 octobre, en préparation ; distincte des tests hors ligne                                                                                                                                                     |
 
 Les tests hors ligne de l'étape 2 utilisent une relecture Google Docs simulée à
 partir de la fixture du 6 septembre ; ils ne remplacent pas l'étape 4.
