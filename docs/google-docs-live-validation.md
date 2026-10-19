@@ -148,7 +148,53 @@ rapport.
 Le test hors ligne `tests/google_docs_live_check_test.ts` exécute ce même
 scénario contre un service Google Docs simulé en mémoire, au niveau HTTP ; il
 valide la logique du script, pas le comportement réel du service. Le résultat de
-l'exécution réelle sera consigné ici.
+l'exécution réelle est consigné ci-dessous.
+
+### Exécution réelle du 19 octobre 2026 : partielle
+
+Le script a été exécuté une première fois le 19 octobre à 10 h 33 UTC, sous Deno
+2.9.7, depuis la branche de la PR nº 12, avec le cœur épinglé `71d23ea`, sur un
+document jetable et un jeton fourni par la personne qui l'a lancé. Le rapport
+s'arrête à l'étape 4 ; le document n'a plus été modifié ensuite.
+
+- **Préparation et passe `review` (étapes 1 et 2), validées.** Onze groupes sur
+  les trois paragraphes, dont un non suggéré (règle de l'euro), chacun avec au
+  moins un changement.
+- **Commit partiel (étape 3), validé.** Six groupes acceptés sur onze ; 9
+  requêtes envoyées au lieu des 17 de la prévisualisation complète ; relecture
+  vérifiée par le SDK, troisième paragraphe intact.
+- **Correction écartée et commit avec styles (étape 4, première moitié),
+  validés.** La correction de `quotes.french.nbsp-inner` après `«` est rapportée
+  écartée et sort de la cascade ; 11 requêtes, dont 4 restaurations de style ;
+  relecture vérifiée par le SDK, styles compris.
+- **Conservation de la correction écartée (étape 4, seconde moitié), en échec.**
+  La passe suivante propose encore des changements.
+
+C'est aussi la première écriture réelle par `createGoogleDocsRestTransport` :
+lectures complètes, `batchUpdate` conditionnés par `requiredRevisionId` et
+relectures ont réussi. La classification d'un conflit de révision par ce
+transport (étape 5) et l'idempotence finale (étape 6) restent à exécuter.
+
+**Cause de l'échec : un défaut du cœur, pas du SDK.** Après le commit, l'export
+HTML du document, obtenu en lecture par le connecteur Google Drive, montre que
+Google a conservé l'espace fine insérée avant `;` comme un segment distinct,
+entre `monde` (gras) et `; cela coûte…`. Sur cette structure, le cœur `71d23ea`
+propose de supprimer l'espace fine de son segment et de la réinsérer au début du
+segment suivant : le texte ne change pas, seul le segment qui porte l'espace
+change. Le même texte en un segment de moins ne produit aucune proposition. Le
+défaut se reproduit hors ligne avec les quatre règles
+`punctuation.{semicolon,question,exclamation}.nnbsp-before` et
+`punctuation.colon.nbsp-before`, dès que l'espace correcte n'est pas dans le
+segment du signe ; les espaces des guillemets, de l'euro et du pourcentage ne
+sont pas concernées. Le cœur n'est donc pas idempotent sur des segments que
+Google peut produire seul, et le SDK enverrait à chaque passe une suppression et
+une insertion qui peuvent changer le style de l'espace. Le simulateur du test
+hors ligne fusionne les segments de même style et ne reproduit pas ce cas.
+
+Le script détaille désormais, en cas d'échec de ces étapes, les propositions
+restantes et les segments de chaque paragraphe concerné. Une nouvelle exécution
+complète est prévue après la correction du cœur, sur un nouveau document
+jetable.
 
 Les identifiants de suites et de nœuds de l'extracteur sont des indices natifs
 absolus : toute écriture antérieure les déplace. Une application qui conserve
