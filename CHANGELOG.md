@@ -27,6 +27,43 @@ and Astro adapters (`rehype`, `satteri`, and `astro`) share one version and the
   expose proposal groups.
 - Custom rules follow the core `0.2` rule interface (`apply(run: LogicalRun)`).
 
+### Editor SDK
+
+- Develop the editor SDK against the unreleased core `0.2` line, pinned to
+  commit
+  [`71d23ea`](https://github.com/orthotypography/orthotypography/commit/71d23eacad1a3722f316e65e3821f7fecad437e7)
+  (core `main` after its pull request #58, including the review mode and
+  dismissed proposals of #57). The SDK cannot be released on this commit; it
+  moves to the published core `0.2` in a later change.
+- **Breaking:** `prepareDocumentPlan` runs one core `review` pass per run
+  instead of separate `lint` and `fix` passes. Diagnostics are linked to their
+  changes (`groupId`, `changeIds`) and carry a `suggested` hint (`apply` or
+  `review`) from their rule's default mode. `PlannedRun.groups` lists the
+  proposal groups, each with its run ID, change IDs, diagnostic indexes, and
+  `suggested`. Changes and preview still cover every group, so accepting every
+  group reproduces the previous fix output.
+- **Breaking:** `validateDocumentPlan(plan, current, accepted)` takes the
+  accepted groups, as the original group objects of the plan, and returns the
+  batch of their changes; copies, duplicates, and groups of another plan are
+  rejected. `DocumentBatch.groups` lists the accepted groups, and each batch run
+  exposes the resulting `preview` nodes. The memory adapter revalidates the
+  accepted groups when it commits.
+- `prepareDocumentPlan` accepts `{ dismissed }`: proposals declined by the
+  application, designated by run, rule, and reported source location. They are
+  validated, reported with `dismissed: true`, and left out of the cascade;
+  `DocumentPlan.dismissed` records them. A dismissal naming an unknown run is
+  rejected.
+- **Breaking:** `previewGoogleDocsRequests` and
+  `previewGoogleDocsStyledRequests` take the accepted groups.
+  `commitGoogleDocsReview(transport, review, accepted)` compiles and writes only
+  the accepted groups, returns them with the `committed` payload, and verifies
+  the readback against them; an invalid selection throws before the review is
+  consumed, and an empty selection consumes it without writing.
+  `prepareGoogleDocsReview` and `normalizeGoogleDocsDocument` accept
+  `dismissed`; `review.preview` and `normalizeGoogleDocsDocument` still cover
+  every group.
+- Synthetic test rules follow the core `0.2` rule interface.
+
 ### Repository
 
 - `deno task core:status` reports whether each release lane depends on a

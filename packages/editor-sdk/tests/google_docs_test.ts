@@ -1,9 +1,9 @@
 import assert from "node:assert/strict";
 import {
   IMPRIMERIE_NATIONALE_PUNCTUATION_RULES as rules,
-  type RuntimeRule,
 } from "@orthotypography/core";
 import { type DocumentSnapshot, prepareDocumentPlan } from "../src/mod.ts";
+import { allGroups, syntheticRule } from "./helpers.ts";
 import {
   type GoogleDocsNodeRange,
   previewGoogleDocsRequests,
@@ -63,15 +63,14 @@ function fixture() {
   return { source, ranges, plan: prepareDocumentPlan(source, rules) };
 }
 
-// A catalogue definition without dependencies, so that a synthetic rule can run
-// alone whatever the order of the core composition.
-const standaloneDefinition =
-  rules.find(({ definition }) =>
-    definition.id === "punctuation.exclamation.nnbsp-before"
-  )!.definition;
 Deno.test("Google Docs requests reproduce previews across nodes, runs and tabs", () => {
   const { source, ranges, plan } = fixture();
-  const preview = previewGoogleDocsRequests(plan, source, ranges);
+  const preview = previewGoogleDocsRequests(
+    plan,
+    source,
+    ranges,
+    allGroups(plan),
+  );
   const texts = new Map([["tab-a", "\n😀 Bonjour :suite\n\nBravo !\n"], [
     "tab-b",
     "\nSalut !\n",
@@ -118,11 +117,22 @@ Deno.test("Google Docs compiler rejects stale and reconstructed plans", () => {
   const { source, ranges, plan } = fixture();
   assert.throws(
     () =>
-      previewGoogleDocsRequests(plan, { ...source, revision: "new" }, ranges),
+      previewGoogleDocsRequests(
+        plan,
+        { ...source, revision: "new" },
+        ranges,
+        allGroups(plan),
+      ),
     /Stale/,
   );
   assert.throws(
-    () => previewGoogleDocsRequests(structuredClone(plan), source, ranges),
+    () =>
+      previewGoogleDocsRequests(
+        structuredClone(plan),
+        source,
+        ranges,
+        allGroups(plan),
+      ),
     /Unknown document plan/,
   );
 });
@@ -136,7 +146,7 @@ Deno.test("Google Docs ranges must be complete, unique and length matched", () =
     }, ...ranges.slice(1)], [...ranges, { ...ranges[0], runId: "unknown" }]]
   ) {
     assert.throws(
-      () => previewGoogleDocsRequests(plan, source, invalid),
+      () => previewGoogleDocsRequests(plan, source, invalid, allGroups(plan)),
       /Missing|Duplicate|Unknown/,
     );
   }
@@ -158,7 +168,7 @@ Deno.test("Google Docs ranges reject invalid indexes and implicit tabs", () => {
         previewGoogleDocsRequests(plan, source, [{
           ...ranges[0],
           ...replacement,
-        }, ...ranges.slice(1)]),
+        }, ...ranges.slice(1)], allGroups(plan)),
       /Invalid/,
     );
   }
@@ -172,7 +182,7 @@ Deno.test("Google Docs compiler rejects overlapping and discontinuous ranges", (
         ...ranges[0],
         startIndex: 5,
         endIndex: 12,
-      }, ...ranges.slice(1)]),
+      }, ...ranges.slice(1)], allGroups(plan)),
     /Overlapping/,
   );
   for (
@@ -184,7 +194,7 @@ Deno.test("Google Docs compiler rejects overlapping and discontinuous ranges", (
     const copy = [...ranges];
     copy[2] = { ...copy[2], ...replacement };
     assert.throws(
-      () => previewGoogleDocsRequests(plan, source, copy),
+      () => previewGoogleDocsRequests(plan, source, copy, allGroups(plan)),
       /contiguous/,
     );
   }
@@ -206,7 +216,7 @@ Deno.test("Google Docs compiler excludes paragraph boundaries and inline objects
           tabId: "t",
           startIndex: 1,
           endIndex: 1 + value.length,
-        }]),
+        }], allGroups(plan)),
       /Unsupported/,
     );
   }
@@ -219,14 +229,7 @@ Deno.test("Google Docs compiler rejects text stripped or structurally changed by
     runs: [{ id: "p", locale: "fr-FR", nodes: [{ id: "n", value: "x" }] }],
   };
   for (const replacement of ["\n", "\u0000", "\ue000", "\ufffc", "\ud800"]) {
-    const rule: RuntimeRule = {
-      definition: standaloneDefinition,
-      apply: (value, context) =>
-        context.mode === "lint" ? { value } : ({
-          value: replacement,
-          edits: [{ start: 0, end: 1, replacement }],
-        }),
-    };
+    const rule = syntheticRule([{ start: 0, end: 1, replacement }]);
     const plan = prepareDocumentPlan(source, [rule]);
     assert.throws(
       () =>
@@ -236,7 +239,7 @@ Deno.test("Google Docs compiler rejects text stripped or structurally changed by
           tabId: "t",
           startIndex: 1,
           endIndex: 2,
-        }]),
+        }], allGroups(plan)),
       /Unsupported/,
     );
   }
@@ -245,7 +248,12 @@ Deno.test("Google Docs compiler rejects text stripped or structurally changed by
 Deno.test("Google Docs empty corrections return no operations", () => {
   const source = { documentId: "d", revision: "r", runs: [] };
   assert.deepEqual(
-    previewGoogleDocsRequests(prepareDocumentPlan(source, rules), source, [])
+    previewGoogleDocsRequests(
+      prepareDocumentPlan(source, rules),
+      source,
+      [],
+      [],
+    )
       .body.requests,
     [],
   );
@@ -268,7 +276,7 @@ Deno.test("Google Docs protected text never receives native requests", () => {
     tabId: "t",
     startIndex: 1,
     endIndex: 10,
-  }]);
+  }], allGroups(plan));
   assert.deepEqual(preview.body.requests, []);
 });
 
@@ -278,14 +286,7 @@ Deno.test("Google Docs refuses a correction splitting an astral character", () =
     revision: "r",
     runs: [{ id: "p", locale: "fr-FR", nodes: [{ id: "n", value: "😀" }] }],
   };
-  const rule: RuntimeRule = {
-    definition: standaloneDefinition,
-    apply: (value, context) =>
-      context.mode === "lint" ? { value } : ({
-        value: "😁",
-        edits: [{ start: 1, end: 2, replacement: "\ude01" }],
-      }),
-  };
+  const rule = syntheticRule([{ start: 1, end: 2, replacement: "\ude01" }]);
   const plan = prepareDocumentPlan(source, [rule]);
   assert.throws(
     () =>
@@ -295,7 +296,7 @@ Deno.test("Google Docs refuses a correction splitting an astral character", () =
         tabId: "t",
         startIndex: 1,
         endIndex: 3,
-      }]),
+      }], allGroups(plan)),
     /Unsupported/,
   );
 });

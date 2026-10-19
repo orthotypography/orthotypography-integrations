@@ -34,7 +34,8 @@ function source(): DocumentSnapshot {
 
 function prepare(snapshot: DocumentSnapshot) {
   const plan = prepareDocumentPlan(snapshot, IMPRIMERIE_NATIONALE_RULES);
-  return { plan, batch: validateDocumentPlan(plan, snapshot) };
+  const groups = plan.runs.flatMap((run) => run.groups);
+  return { plan, batch: validateDocumentPlan(plan, snapshot, groups) };
 }
 
 Deno.test("memory commits all runs and preserves nodes, protections and UTF-16", () => {
@@ -149,4 +150,19 @@ Deno.test("competing validated batches allow only the first writer", async () =>
   if (results[1].status === "rejected") {
     assert.match(results[1].reason.message, /Stale/);
   }
+});
+
+Deno.test("memory commits accepted groups only and revalidates them", () => {
+  const memory = createMemoryDocument(source());
+  const before = memory.read();
+  const plan = prepareDocumentPlan(before, IMPRIMERIE_NATIONALE_RULES);
+  // Accept the first group of the second run only.
+  const accepted = [plan.runs[1].groups[0]];
+  const batch = validateDocumentPlan(plan, before, accepted);
+  assert.deepEqual(batch.runs.map((run) => run.id), ["two"]);
+  const after = memory.commit(batch);
+  assert.deepEqual(after.runs[0], before.runs[0]);
+  assert.deepEqual(after.runs[1].nodes, batch.runs[0].preview);
+  assert.notDeepEqual(after.runs[1].nodes, plan.runs[1].preview);
+  assert.throws(() => memory.commit(batch), /Stale/);
 });

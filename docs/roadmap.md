@@ -11,16 +11,16 @@ proposées, sans engagement de date.
 
 ## État acquis
 
-| Chantier                   | État vérifié                                                                                                                                                                                                                                                              | Preuve                                                                                                                                                                |
-| -------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Markdown / Astro           | Rehype, Sätteri et Astro publiés en `0.1.0-alpha.2`, cible Astro 7 ; processeur configuré préservé, diagnostics et changements localisés exposés                                                                                                                          | [Release](https://github.com/orthotypography/orthotypography-integrations/releases/tag/v0.1.0-alpha.2), [configuration](../deno.json)                                 |
-| Dépendance des adaptateurs | Versions publiées sur le cœur `0.1.0-alpha.3` ; développement contre le commit [`71d23ea`](https://github.com/orthotypography/orthotypography/commit/71d23eacad1a3722f316e65e3821f7fecad437e7) de la ligne `0.2`, testé hors ligne ; publication impossible sur ce commit | [Configuration](../deno.json), `deno task core:status`                                                                                                                |
-| SDK neutre                 | `@orthotypography/editor-sdk@0.1.0-alpha.1` publié ; instantanés et plans immuables, validation complète, adaptateur atomique en mémoire                                                                                                                                  | [Release SDK](https://github.com/orthotypography/orthotypography-integrations/releases/tag/editor-sdk-v0.1.0-alpha.1), [README SDK](../packages/editor-sdk/README.md) |
-| Dépendance du SDK          | Cœur `0.1.0-alpha.3` publié                                                                                                                                                                                                                                               | [Manifeste SDK](../packages/editor-sdk/deno.json)                                                                                                                     |
-| Google Docs                | Extraction des paragraphes et onglets imbriqués, coordonnées UTF-16, compilation conditionnelle, restauration limitée des styles                                                                                                                                          | [Périmètre](google-docs-preview.md), [README SDK](../packages/editor-sdk/README.md)                                                                                   |
-| Transport et révision      | Transport REST injecté, relecture vérifiée, préparation / validation / abandon d'une révision proposée ; objets à usage unique                                                                                                                                            | [README SDK](../packages/editor-sdk/README.md)                                                                                                                        |
-| Tests SDK                  | 67 tests annoncés pour la release alpha.0 ; 67 tests exécutés hors ligne contre le cœur `0.1.0-alpha.3` sur la branche de préparation d'alpha.1                                                                                                                           | Release SDK ; ce nombre n'est pas une nouvelle exécution                                                                                                              |
-| Validation réelle          | Scénario limité exécuté via le connecteur Google Drive le 6 septembre avec le cœur `0.1.0-alpha.2`, non rejoué avec `0.1.0-alpha.3` ; transport REST direct encore à valider en conditions réelles                                                                        | [Compte rendu](google-docs-live-validation.md)                                                                                                                        |
+| Chantier                   | État vérifié                                                                                                                                                                                                                                                                                            | Preuve                                                                                                                                                                |
+| -------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Markdown / Astro           | Rehype, Sätteri et Astro publiés en `0.1.0-alpha.2`, cible Astro 7 ; processeur configuré préservé, diagnostics et changements localisés exposés                                                                                                                                                        | [Release](https://github.com/orthotypography/orthotypography-integrations/releases/tag/v0.1.0-alpha.2), [configuration](../deno.json)                                 |
+| Dépendance des adaptateurs | Versions publiées sur le cœur `0.1.0-alpha.3` ; développement contre le commit [`71d23ea`](https://github.com/orthotypography/orthotypography/commit/71d23eacad1a3722f316e65e3821f7fecad437e7) de la ligne `0.2`, testé hors ligne ; publication impossible sur ce commit                               | [Configuration](../deno.json), `deno task core:status`                                                                                                                |
+| SDK neutre                 | `@orthotypography/editor-sdk@0.1.0-alpha.1` publié ; instantanés et plans immuables, validation complète, adaptateur atomique en mémoire                                                                                                                                                                | [Release SDK](https://github.com/orthotypography/orthotypography-integrations/releases/tag/editor-sdk-v0.1.0-alpha.1), [README SDK](../packages/editor-sdk/README.md) |
+| Dépendance du SDK          | Version publiée sur le cœur `0.1.0-alpha.3` ; développement contre le commit [`71d23ea`](https://github.com/orthotypography/orthotypography/commit/71d23eacad1a3722f316e65e3821f7fecad437e7) du cœur, qui contient le mode `review` (PR nº 57), testé hors ligne ; publication impossible sur ce commit | [Manifeste SDK](../packages/editor-sdk/deno.json), `deno task core:status`                                                                                            |
+| Google Docs                | Extraction des paragraphes et onglets imbriqués, coordonnées UTF-16, compilation conditionnelle, restauration limitée des styles                                                                                                                                                                        | [Périmètre](google-docs-preview.md), [README SDK](../packages/editor-sdk/README.md)                                                                                   |
+| Transport et révision      | Transport REST injecté, relecture vérifiée, préparation / validation / abandon d'une révision proposée ; objets à usage unique                                                                                                                                                                          | [README SDK](../packages/editor-sdk/README.md)                                                                                                                        |
+| Tests SDK                  | 67 tests pour la release alpha.1 contre le cœur `0.1.0-alpha.3` ; 79 tests exécutés hors ligne le 19 octobre contre le commit `71d23ea` du cœur, dont la passe `review`, les groupes, l'acceptation partielle, les corrections écartées et une relecture Google Docs simulée                            | Tests du SDK ; aucune exécution réelle                                                                                                                                |
+| Validation réelle          | Scénario limité exécuté via le connecteur Google Drive le 6 septembre avec le cœur `0.1.0-alpha.2`, non rejoué depuis ; ni la passe `review`, ni l'acceptation par groupes, ni le transport REST direct ne sont validés en conditions réelles                                                           | [Compte rendu](google-docs-live-validation.md)                                                                                                                        |
 
 Le SDK est dans `packages/editor-sdk`. L'ancien état expérimental non publié ne
 décrit plus la situation courante. Les deux points d'entrée `.` et
@@ -39,8 +39,10 @@ charge et sans liens. Les structures non prises en charge sont refusées. Les
 en-têtes, pieds de page, notes, tableaux, objets incorporés, suggestions,
 sélections et annulation ne disposent pas d'une garantie générale de prise en
 charge. Le SDK ne fournit ni interface utilisateur, ni acquisition/stockage
-OAuth, ni relance automatique. La persistance des plans et l'acceptation
-partielle sont hors du contrat actuel.
+OAuth, ni relance automatique. La persistance des plans est hors du contrat. Sur
+la ligne de développement, l'acceptation partielle porte sur des groupes entiers
+du plan courant et les corrections écartées restent à la charge de l'application
+cliente ; ce contrat n'est vérifié que par des tests hors ligne.
 
 ## Passage au cœur 0.2
 
@@ -61,9 +63,18 @@ ni empaquetée ni publiée ; la CI saute ses contrôles JSR et npm
 | Étape | Voie        | Contenu                                                                                                                                                                                                                  | État                                    |
 | ----- | ----------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | --------------------------------------- |
 | 1     | Adaptateurs | Commit `71d23ea` (`main` du cœur après la PR nº 58) ; diagnostics toujours en coordonnées sources, `coordinateSpace` et `segmentRevision` retirés de `AdapterDiagnostic` ; application tout ou rien, groupes non exposés | implémenté, testé hors ligne            |
-| 2     | SDK         | Passe unique `review`, groupes de propositions, acceptation par groupes entiers, propositions écartées                                                                                                                   | à faire                                 |
+| 2     | SDK         | Commit `71d23ea`, comme les adaptateurs ; passe unique `review`, groupes exposés par le plan, validation et commit Google Docs par groupes entiers, propositions écartées transmises au cœur                             | implémenté, testé hors ligne            |
 | 3     | Les deux    | Passage au cœur `0.2` publié, puis releases des deux voies                                                                                                                                                               | sur instruction explicite               |
-| 4     | SDK         | Validation réelle dans Google Docs avec le cœur `0.2`                                                                                                                                                                    | à faire, distincte des tests hors ligne |
+| 4     | SDK         | Validation réelle dans Google Docs de la passe `review` et de l'acceptation par groupes, avec le cœur `0.2`                                                                                                              | à faire, distincte des tests hors ligne |
+
+Les tests hors ligne de l'étape 2 utilisent une relecture Google Docs simulée à
+partir de la fixture du 6 septembre ; ils ne remplacent pas l'étape 4.
+L'[anomalie nº 54](https://github.com/orthotypography/orthotypography/issues/54)
+du cœur, où l'espace après `?`, `!`, `:` et `;` devant un signe fermant (`»`)
+produisait des groupes contradictoires, sans changement, est corrigée par la PR
+nº 58, incluse dans le commit épinglé. Le contrat admet toujours un groupe dont
+les propositions s'annulent : il peut être accepté sans effet, et une
+application devrait présenter ses diagnostics comme contradictoires.
 
 ## Prochaines tâches proposées
 
@@ -84,9 +95,12 @@ ni empaquetée ni publiée ; la CI saute ses contrôles JSR et npm
    révision périmée et absence de rejeu. Conserver un compte rendu borné et des
    fixtures nettoyées ; distinguer ce test de celui effectué via le connecteur.
 4. **Application cliente de référence.** Définir puis réaliser un parcours
-   limité d'affichage des diagnostics et prévisualisations, acceptation ou
-   abandon, application et présentation des conflits. L'application gère les
-   identifiants ; le SDK conserve son contrat atomique et ses exclusions.
+   limité d'affichage des diagnostics, des groupes et de leurs indications
+   `suggested`, acceptation de groupes entiers ou abandon, conservation et mise
+   à jour des corrections écartées, nouvelle préparation après chaque
+   acceptation et présentation des conflits et des groupes contradictoires.
+   L'application gère les identifiants ; le SDK conserve son contrat atomique et
+   ses exclusions.
 5. **Extension des capacités documentaires.** Prioriser une structure ou un cas
    de style à la fois après les validations précédentes. Exiger des scénarios
    réels et des refus explicites avant d'élargir les garanties.
