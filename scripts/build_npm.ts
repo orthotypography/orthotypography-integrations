@@ -7,28 +7,32 @@ import rehypeConfig from "../packages/rehype/deno.json" with { type: "json" };
 import satteriConfig from "../packages/satteri/deno.json" with {
   type: "json",
 };
-import rootConfig from "../deno.json" with { type: "json" };
+import {
+  type CoreDependency,
+  laneCoreDependencies,
+} from "./core_dependency.ts";
 
 type PackageName = "rehype" | "satteri" | "astro" | "editor-sdk";
 
-/** Reads the exact core version pinned by a Deno import specifier. */
-function pinnedCoreVersion(specifier: string): string {
-  const prefix = "jsr:@orthotypography/core@";
-  const version = specifier.startsWith(prefix)
-    ? specifier.slice(prefix.length)
-    : "";
-  if (!/^\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?$/.test(version)) {
-    throw new Error(`Core must be pinned to an exact version: ${specifier}`);
+/** Reads the published core version of a lane; development pins cannot be packaged. */
+function publishedCoreVersion(
+  lane: string,
+  dependency: CoreDependency,
+): string {
+  if (dependency.kind === "development") {
+    throw new Error(
+      `${lane} depend on development core commit ${dependency.commit}; ` +
+        "pin a published core version before packaging",
+    );
   }
-  return version;
+  return dependency.version;
 }
 
-const adapterCoreVersion = pinnedCoreVersion(
-  rootConfig.imports["@orthotypography/core"],
-);
-const editorCoreVersion = pinnedCoreVersion(
-  editorSdkConfig.imports["@orthotypography/core"],
-);
+const coreDependencies = laneCoreDependencies();
+const adapterCoreVersion = (): string =>
+  publishedCoreVersion("The adapters", coreDependencies.adapters);
+const editorCoreVersion = (): string =>
+  publishedCoreVersion("The editor SDK", coreDependencies.editorSdk);
 
 const packageNames: readonly PackageName[] = [
   "rehype",
@@ -49,14 +53,14 @@ await emptyDir(
 
 async function buildPackage(
   name: PackageName,
-  options: Parameters<typeof build>[0],
+  options: () => Parameters<typeof build>[0],
 ): Promise<void> {
   if (selectedPackage === undefined || selectedPackage === name) {
-    await build(options);
+    await build(options());
   }
 }
 
-await buildPackage("rehype", {
+await buildPackage("rehype", () => ({
   entryPoints: [{ name: ".", path: "./packages/rehype/src/mod.ts" }],
   outDir: "./npm/rehype",
   esModule: true,
@@ -91,13 +95,13 @@ await buildPackage("rehype", {
     engines: { node: ">=18" },
     sideEffects: false,
     dependencies: {
-      "@orthotypography/core": adapterCoreVersion,
+      "@orthotypography/core": adapterCoreVersion(),
     },
   },
   mappings: {
     "@orthotypography/core": {
       name: "@orthotypography/core",
-      version: adapterCoreVersion,
+      version: adapterCoreVersion(),
     },
   },
   postBuild() {
@@ -107,9 +111,9 @@ await buildPackage("rehype", {
       "npm/rehype/README.md",
     );
   },
-});
+}));
 
-await buildPackage("satteri", {
+await buildPackage("satteri", () => ({
   entryPoints: [{ name: ".", path: "./packages/satteri/src/mod.ts" }],
   outDir: "./npm/satteri",
   esModule: true,
@@ -146,14 +150,14 @@ await buildPackage("satteri", {
     engines: { node: ">=18" },
     sideEffects: false,
     dependencies: {
-      "@orthotypography/core": adapterCoreVersion,
+      "@orthotypography/core": adapterCoreVersion(),
       "satteri": "^0.10.5",
     },
   },
   mappings: {
     "@orthotypography/core": {
       name: "@orthotypography/core",
-      version: adapterCoreVersion,
+      version: adapterCoreVersion(),
     },
     "satteri": {
       name: "satteri",
@@ -167,9 +171,9 @@ await buildPackage("satteri", {
       "npm/satteri/README.md",
     );
   },
-});
+}));
 
-await buildPackage("astro", {
+await buildPackage("astro", () => ({
   entryPoints: [{ name: ".", path: "./packages/astro/src/mod.ts" }],
   outDir: "./npm/astro",
   esModule: true,
@@ -247,9 +251,9 @@ await buildPackage("astro", {
       "npm/astro/README.md",
     );
   },
-});
+}));
 
-await buildPackage("editor-sdk", {
+await buildPackage("editor-sdk", () => ({
   entryPoints: [
     "./packages/editor-sdk/mod.ts",
     {
@@ -295,13 +299,13 @@ await buildPackage("editor-sdk", {
     engines: { node: ">=18" },
     sideEffects: false,
     dependencies: {
-      "@orthotypography/core": editorCoreVersion,
+      "@orthotypography/core": editorCoreVersion(),
     },
   },
   mappings: {
     "@orthotypography/core": {
       name: "@orthotypography/core",
-      version: editorCoreVersion,
+      version: editorCoreVersion(),
     },
   },
   postBuild() {
@@ -311,4 +315,4 @@ await buildPackage("editor-sdk", {
       "npm/editor-sdk/README.md",
     );
   },
-});
+}));

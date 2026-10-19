@@ -51,22 +51,24 @@ The repository is a Deno workspace:
 Dependencies use exact versions and no lockfile. `minimumDependencyAge` refuses
 packages published less than one day ago, except `@orthotypography/core`. The
 Markdown adapters and the editor SDK pin their own core versions, in `deno.json`
-and `packages/editor-sdk/deno.json` respectively. Do not align them, or change
+and `packages/editor-sdk/deno.json` respectively, either to a published version
+or to an immutable development commit (see below). Do not align them, or change
 either, outside a dedicated pull request.
 
 ## Deno tasks
 
 Run tasks from the repository root.
 
-| Task                            | What it does                                                                                                 |
-| ------------------------------- | ------------------------------------------------------------------------------------------------------------ |
-| `deno task check`               | format check, lint, type check of the Markdown adapters, their tests, and the scripts, and API documentation |
-| `deno task test`                | rehype, Sätteri, and Astro tests                                                                             |
-| `deno task editor:check`        | the same checks for the editor SDK                                                                           |
-| `deno task editor:test`         | editor SDK tests, which `deno task test` does not run                                                        |
-| `deno task publish:check`       | JSR publication dry run for the four packages                                                                |
-| `deno task npm:check`           | builds every npm package into `npm/`, smoke-tests them under Node, and runs pack dry runs                    |
-| `deno task npm:build:<package>` | builds one npm package: `rehype`, `satteri`, `astro`, or `editor-sdk`                                        |
+| Task                            | What it does                                                                                                          |
+| ------------------------------- | --------------------------------------------------------------------------------------------------------------------- |
+| `deno task check`               | format check, lint, type check of the Markdown adapters, their tests, and the scripts, and API documentation          |
+| `deno task test`                | rehype, Sätteri, and Astro tests                                                                                      |
+| `deno task editor:check`        | the same checks for the editor SDK                                                                                    |
+| `deno task editor:test`         | editor SDK tests, which `deno task test` does not run                                                                 |
+| `deno task publish:check`       | JSR publication dry run for the four packages; `publish:check:adapters` and `publish:check:editor-sdk` check one lane |
+| `deno task core:status`         | reports whether each lane depends on a published core or on a development commit                                      |
+| `deno task npm:check`           | builds every npm package into `npm/`, smoke-tests them under Node, and runs pack dry runs                             |
+| `deno task npm:build:<package>` | builds one npm package: `rehype`, `satteri`, `astro`, or `editor-sdk`                                                 |
 
 Choose the checks by the kind of change:
 
@@ -81,6 +83,10 @@ Choose the checks by the kind of change:
 - Documentation only: check links and factual claims, and format the changed
   Markdown.
 
+A lane pinned to a development core commit cannot pass the JSR and npm checks;
+run its other checks and report the packaging checks as not applicable (see
+[Trying an unreleased engine](#trying-an-unreleased-engine)).
+
 A few practical notes:
 
 - `deno fmt` fixes what `deno fmt --check` reports. The formatter configuration
@@ -91,16 +97,27 @@ A few practical notes:
   `deno test --allow-env --allow-sys --allow-ffi packages/astro/tests/integration_test.ts`.
   Editor SDK tests run from their package:
   `cd packages/editor-sdk && deno test tests/plan_test.ts`.
-- CI runs `check`, `test`, and `publish:check`, the npm package checks, and the
-  editor SDK checks on every pull request.
+- CI runs `check`, `test`, the editor SDK checks, and, for each lane pinned to a
+  published core, the JSR dry runs and npm package checks on every pull request.
 
 ## Trying an unreleased engine
 
-Published integrations must depend on a published engine version. To try an
-engine change before its release, point the `@orthotypography/core` import of
-the package you are testing to the `src/mod.ts` file of a local engine checkout,
-run the tests, and restore the import before committing. Report such local runs
+To try an engine change locally, point the `@orthotypography/core` import of the
+package you are testing to the `src/mod.ts` file of a local engine checkout, run
+the tests, and restore the import before committing. Report such local runs
 separately from the checks against the pinned version.
+
+A lane may adopt an unreleased engine line in a dedicated pull request by
+pinning an immutable development dependency: the `src/mod.ts` file of a full
+commit SHA of the core repository, for example
+`https://raw.githubusercontent.com/orthotypography/orthotypography/<sha>/src/mod.ts`.
+Branch names, tags, abbreviated SHAs, and local paths are rejected. Record the
+commit, the core pull requests it contains, and the planned move to a published
+core in `docs/roadmap.md`. `deno task core:status` reports the dependency of
+each lane, and `scripts/build_npm.ts` refuses to package a lane pinned to a
+development commit; JSR rejects such an import as well. CI therefore skips the
+JSR dry runs and npm package checks of that lane, and the lane cannot be
+released until it depends on a published core again.
 
 ## Tests
 

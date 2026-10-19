@@ -69,6 +69,12 @@ Astro adapters share the `v<version>` release lane. The editor SDK has its own
 dependencies implicitly. Consult current package manifests and release workflows
 before changing either lane.
 
+Each lane depends on a published core version or on an explicitly documented
+immutable development dependency: a full core commit SHA, recorded in the
+roadmap with the core pull requests it contains. A lane on a development
+dependency cannot be packaged or released; move it to the published core in a
+dedicated pull request once publication is authorized.
+
 ## Validation
 
 - Markdown/Astro changes: `deno task check` and `deno task test`.

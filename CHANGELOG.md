@@ -7,6 +7,14 @@ and Astro adapters (`rehype`, `satteri`, and `astro`) share one version and the
 
 ## Unreleased
 
+### Repository
+
+- `deno task core:status` reports whether each release lane depends on a
+  published core or on an immutable development commit. CI runs the JSR dry runs
+  and npm package checks of a lane only when it depends on a published core, and
+  `scripts/build_npm.ts` refuses to package a lane pinned to a development
+  commit.
+
 ## Editor SDK 0.1.0-alpha.1 - 2026-09-26
 
 - Upgrade from `@orthotypography/core@0.1.0-alpha.2` to `0.1.0-alpha.3`. Plans
