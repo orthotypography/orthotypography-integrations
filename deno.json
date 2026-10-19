@@ -41,7 +41,7 @@
   },
   "imports": {
     "@deno/dnt": "jsr:@deno/dnt@0.43.2",
-    "@orthotypography/core": "https://raw.githubusercontent.com/orthotypography/orthotypography/4e440e52bad039f40a14600198ad87965a898867/src/mod.ts",
+    "@orthotypography/core": "https://raw.githubusercontent.com/orthotypography/orthotypography/ae78ecdc184de4d4d2e4129fda1431dd76059916/src/mod.ts",
     "@astrojs/markdown-satteri": "npm:@astrojs/markdown-satteri@0.3.8",
     "@astrojs/markdown-remark": "npm:@astrojs/markdown-remark@7.2.4",
     "astro": "npm:astro@7.2.9",

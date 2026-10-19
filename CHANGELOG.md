@@ -11,7 +11,7 @@ and Astro adapters (`rehype`, `satteri`, and `astro`) share one version and the
 
 - Develop `rehype`, `satteri`, and `astro` against the unreleased core `0.2`
   line, pinned to commit
-  [`4e440e5`](https://github.com/orthotypography/orthotypography/commit/4e440e52bad039f40a14600198ad87965a898867)
+  [`ae78ecd`](https://github.com/orthotypography/orthotypography/commit/ae78ecdc184de4d4d2e4129fda1431dd76059916)
   (core `main` after its pull request #67). Outputs follow the core changes
   since `0.1.0-alpha.3` listed in the core `CHANGELOG`, notably rules run once
   per logical run, so constructs split across inline nodes are corrected or
@@ -41,7 +41,7 @@ and Astro adapters (`rehype`, `satteri`, and `astro`) share one version and the
 
 - Develop the editor SDK against the unreleased core `0.2` line, pinned to
   commit
-  [`4e440e5`](https://github.com/orthotypography/orthotypography/commit/4e440e52bad039f40a14600198ad87965a898867)
+  [`ae78ecd`](https://github.com/orthotypography/orthotypography/commit/ae78ecdc184de4d4d2e4129fda1431dd76059916)
   (core `main` after its pull request #67, including the review mode and
   dismissed proposals of #57, and the fixes of #63 and #66 for correct spaces
   next to `?`, `!`, `:`, and `;` or inside guillemets in split text runs, found
