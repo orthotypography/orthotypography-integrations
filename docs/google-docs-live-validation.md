@@ -197,7 +197,8 @@ défaut du cœur, antérieur au premier : une espace insécable correcte à
 l'intérieur de guillemets, placée dans un segment voisin, recevait une seconde
 espace (`«` · espace insécable · `oui` devenait `«  oui`), ce qui altérait le
 texte (anomalie nº 66 du cœur). Les deux défauts sont corrigés au commit
-`4e440e5` du cœur (PR nº 64 et 67), sur lequel les deux voies sont épinglées ;
+`ae78ecd` du cœur (PR nº 64 et 67 ; identifiant `4e440e5` avant la réécriture
+des auteurs du 19 octobre, arbre identique), sur lequel les deux voies sont épinglées ;
 le scénario passe hors ligne dans les deux modes du simulateur.
 
 Le script détaille désormais, en cas d'échec de ces étapes, les propositions
@@ -206,7 +207,7 @@ restantes et les segments de chaque paragraphe concerné.
 ### Seconde exécution réelle, 19 octobre 2026 : complète
 
 Le script a été exécuté de nouveau le 19 octobre à 12 h 38 UTC, sous Deno 2.9.7,
-depuis la branche de la PR nº 12 avec le cœur épinglé `4e440e5`, sur un nouveau
+depuis la branche de la PR nº 12 avec le cœur épinglé `4e440e5` (désormais `ae78ecd`, même arbre), sur un nouveau
 document jetable et avec un nouveau jeton fourni par la personne qui l'a lancé.
 Les sept étapes ont réussi (`ok: true`) :
 
