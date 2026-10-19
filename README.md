@@ -27,10 +27,13 @@ deno task npm:check
 The three content adapters are developed against core commit
 [`82e4cc9`](https://github.com/orthotypography/orthotypography/commit/82e4cc97e3e97dfddc37ec9c1aacc33f07b3d229)
 of the unreleased `0.2` line; their published `0.1.0-alpha.2` versions use
-`@orthotypography/core@0.1.0-alpha.3`. The independently versioned editor SDK
-uses core `0.1.0-alpha.3`. `deno task core:status` reports each lane's core
-dependency. Publication remains gated by the repository variable
-`PUBLISH_ENABLED`, and a lane pinned to a development core cannot be published.
+`@orthotypography/core@0.1.0-alpha.3`. The independently versioned editor SDK is
+developed against core commit
+[`da6a165`](https://github.com/orthotypography/orthotypography/commit/da6a165c32a108e47f5d2b00e8775499f92b4777),
+the head of core pull request #57; its published `0.1.0-alpha.1` uses core
+`0.1.0-alpha.3`. `deno task core:status` reports each lane's core dependency.
+Publication remains gated by the repository variable `PUBLISH_ENABLED`, and a
+lane pinned to a development core cannot be published.
 
 ## Document editor SDK
 
