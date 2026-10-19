@@ -11,15 +11,19 @@ and Astro adapters (`rehype`, `satteri`, and `astro`) share one version and the
 
 - Develop `rehype`, `satteri`, and `astro` against the unreleased core `0.2`
   line, pinned to commit
-  [`22b5a10`](https://github.com/orthotypography/orthotypography/commit/22b5a105f13e0e94955aa1ca20561a79c47047fc)
-  (core `main` after its pull request #64). Outputs follow the core changes
+  [`4e440e5`](https://github.com/orthotypography/orthotypography/commit/4e440e52bad039f40a14600198ad87965a898867)
+  (core `main` after its pull request #67). Outputs follow the core changes
   since `0.1.0-alpha.3` listed in the core `CHANGELOG`, notably rules run once
   per logical run, so constructs split across inline nodes are corrected or
   protected; the space after `?`, `!`, `:`, and `;` before a closing sign, a
   comma, or a period is left as the Imprimerie nationale sets it (core issues
-  #54 and #59); and a correct space next to these signs is left in its node when
-  inline nodes split around it (core issue #63). The adapters cannot be released
-  on this commit; they move to the published core `0.2` in a later change.
+  #54 and #59); and a correct space next to these signs or inside French
+  guillemets is left in its node when inline nodes split around it, instead of
+  being moved or doubled (core issues #63 and #66). Diagnostics also carry the
+  core's `messageId` and `messageArgs`, and core errors are typed
+  `OrthotypographyError`s with a stable `code` (core #65). The adapters cannot
+  be released on this commit; they move to the published core `0.2` in a later
+  change.
 - **Breaking (from the core):** locales are canonicalized (`fr-fr` now selects
   `fr-FR` rules), and a logical run whose locale no configured rule supports
   throws instead of passing through unchanged. Check the configured `locale`
@@ -37,12 +41,13 @@ and Astro adapters (`rehype`, `satteri`, and `astro`) share one version and the
 
 - Develop the editor SDK against the unreleased core `0.2` line, pinned to
   commit
-  [`22b5a10`](https://github.com/orthotypography/orthotypography/commit/22b5a105f13e0e94955aa1ca20561a79c47047fc)
-  (core `main` after its pull request #64, including the review mode and
-  dismissed proposals of #57 and the fix of #63, found in the first live Google
-  Docs run, for correct spaces next to `?`, `!`, `:`, and `;` in split text
-  runs). The SDK cannot be released on this commit; it moves to the published
-  core `0.2` in a later change.
+  [`4e440e5`](https://github.com/orthotypography/orthotypography/commit/4e440e52bad039f40a14600198ad87965a898867)
+  (core `main` after its pull request #67, including the review mode and
+  dismissed proposals of #57, and the fixes of #63 and #66 for correct spaces
+  next to `?`, `!`, `:`, and `;` or inside guillemets in split text runs, found
+  by the first live Google Docs run and the live check simulator). The SDK
+  cannot be released on this commit; it moves to the published core `0.2` in a
+  later change.
 - **Breaking (from the core):** run locales are canonicalized, and
   `prepareDocumentPlan`, `prepareGoogleDocsReview`, and
   `normalizeGoogleDocsDocument` throw for a run whose locale no rule of a
