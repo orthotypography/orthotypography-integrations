@@ -1,6 +1,17 @@
-# Google Docs : validation réelle du 6 septembre 2026
+# Google Docs : validations réelles
 
-## Résultat et périmètre
+Ce compte rendu consigne, par ordre chronologique, les exécutions réelles du SDK
+contre Google Docs. Chaque section reste attachée à la version du SDK et du cœur
+qu'elle cite ; seuls les scénarios décrits sont validés.
+
+| Date             | Transport                  | Cœur                                         | Résultat                                                                                                   |
+| ---------------- | -------------------------- | -------------------------------------------- | ---------------------------------------------------------------------------------------------------------- |
+| 6 septembre 2026 | connecteur Google Drive    | `0.1.0-alpha.2`                              | huit corrections, styles, onglets imbriqués, idempotence, refus d'une révision périmée                     |
+| 19 octobre 2026  | REST direct, premier essai | commit `71d23ea`                             | partiel : arrêt à la conservation d'une correction écartée, à cause d'un défaut du cœur depuis corrigé     |
+| 19 octobre 2026  | REST direct, second essai  | commit `ae78ecd`, sources de `0.2.0-alpha.0` | complet : passe `review`, commit par groupes, correction écartée, styles, conflit de révision, idempotence |
+| 19 octobre 2026  | REST direct, vérification  | `0.2.0-alpha.0` publié                       | réussie selon la personne qui l'a lancée ; rapport non versé au dépôt                                      |
+
+## 6 septembre 2026 : résultat et périmètre
 
 Le SDK au commit `cf17660ca38aa0a284855974d9bed671c6eeb62f`, avec le cœur
 `2d6af076bb32af2caa0e4171fbb7905396bd2c24`, a été exécuté sous Node 24.19.0
@@ -8,9 +19,9 @@ contre un document Google Docs jetable créé avec autorisation. Le transport
 utilisé est le connecteur Google Drive de la session ; aucun transport ni
 identifiant OAuth n'est ajouté au SDK.
 
-Ce même état du cœur est désormais publié sous la version immuable
-`@orthotypography/core@0.1.0-alpha.2`, utilisée par la configuration autonome du
-SDK pour ses vérifications courantes.
+Ce même état du cœur a ensuite été publié sous la version immuable
+`@orthotypography/core@0.1.0-alpha.2`, qu'utilisait alors la configuration
+autonome du SDK.
 
 Le scénario utilise `IMPRIMERIE_NATIONALE_PUNCTUATION_RULES` et la langue
 `fr-FR`, pas le preset typographique complet. Il couvre deux paragraphes dans
@@ -51,9 +62,9 @@ utilisé.
 Cette conversion locale n'est pas un adaptateur public et ne démontre pas que le
 connecteur préserve toutes les propriétés d'une réponse native quelconque.
 L'extracteur conserve donc son contrat strict de réponse native complète ; il
-n'accepte pas implicitement les données aplaties. Un futur transport devra
-traiter cette différence explicitement et refuser les topologies incohérentes ou
-les réponses incomplètes.
+n'accepte pas implicitement les données aplaties. Un transport fondé sur ce
+connecteur devrait traiter cette différence explicitement et refuser les
+topologies incohérentes ou les réponses incomplètes.
 
 Les requêtes transmises sont celles produites par
 `previewGoogleDocsStyledRequests`, sans réécriture de leur contenu.
@@ -78,22 +89,23 @@ de cette validation, les 48 tests SDK passaient localement sous Deno 2.9.6 et
 Node 24.19.0, avec résolution locale du cœur au commit alors épinglé (et
 transformation TypeScript sous Node).
 
-## Limites et suite
+## Limites du 6 septembre et suite
 
 Ce résultat valide ce scénario, pas tous les styles acceptés par le compilateur.
 Les tailles et familles de polices, les autres couleurs et indicateurs, les
 listes, les liens, les suggestions, les tableaux, les contrôles, les sélections,
 l'annulation et les effets de collaboration restent hors de cette validation.
-Les refus et le périmètre expérimental existants restent en vigueur.
+Les refus et le périmètre alpha existants restent en vigueur.
 
 Le contrat de transport explicite a ensuite été ajouté : lecture complète,
 validation de la réponse, écriture conditionnelle unique, classification des
 conflits et relecture. Il reste indépendant des connecteurs de cette session et
 ne reconstruit jamais un plan ancien après un conflit. Un adaptateur REST Google
 Docs isolé le complète désormais avec `fetch` et un fournisseur de jeton
-injectés. Il reste à valider cet adaptateur directement contre l'API avec des
-identifiants fournis par l'application hôte. Le SDK a depuis été publié en
-`0.1.0-alpha.0` ; aucun adaptateur natif général n'est annoncé.
+injectés ; il a été validé directement contre l'API le 19 octobre 2026, avec des
+identifiants fournis par la personne qui a lancé l'essai (sections suivantes).
+Aucune prise en charge générale de Google Docs n'est annoncée au-delà des
+scénarios consignés ici.
 
 ## Portée après le passage au cœur `0.1.0-alpha.3`
 
@@ -106,8 +118,8 @@ Google Docs ; seule la validation hors ligne couvre le SDK `0.1.0-alpha.1`.
 
 ## Ligne `0.2` : procédure de validation par le transport REST
 
-La passe `review`, l'acceptation par groupes et les corrections écartées (PR nº
-9 et 10) n'ont pas encore été exécutées dans Google Docs. Le script
+Pour valider dans Google Docs la passe `review`, l'acceptation par groupes et
+les corrections écartées (PR nº 9 et 10), le script
 [`packages/editor-sdk/live/google_docs_rest_check.ts`](../packages/editor-sdk/live/google_docs_rest_check.ts)
 les déroule par `createGoogleDocsRestTransport`, sans connecteur, sur un
 document jetable :
@@ -198,8 +210,8 @@ l'intérieur de guillemets, placée dans un segment voisin, recevait une seconde
 espace (`«` · espace insécable · `oui` devenait `«  oui`), ce qui altérait le
 texte (anomalie nº 66 du cœur). Les deux défauts sont corrigés au commit
 `ae78ecd` du cœur (PR nº 64 et 67 ; identifiant `4e440e5` avant la réécriture
-des auteurs du 19 octobre, arbre identique), sur lequel les deux voies sont épinglées ;
-le scénario passe hors ligne dans les deux modes du simulateur.
+des auteurs du 19 octobre, arbre identique), sur lequel les deux voies sont
+épinglées ; le scénario passe hors ligne dans les deux modes du simulateur.
 
 Le script détaille désormais, en cas d'échec de ces étapes, les propositions
 restantes et les segments de chaque paragraphe concerné.
@@ -207,9 +219,9 @@ restantes et les segments de chaque paragraphe concerné.
 ### Seconde exécution réelle, 19 octobre 2026 : complète
 
 Le script a été exécuté de nouveau le 19 octobre à 12 h 38 UTC, sous Deno 2.9.7,
-depuis la branche de la PR nº 12 avec le cœur épinglé `4e440e5` (désormais `ae78ecd`, même arbre), sur un nouveau
-document jetable et avec un nouveau jeton fourni par la personne qui l'a lancé.
-Les sept étapes ont réussi (`ok: true`) :
+depuis la branche de la PR nº 12 avec le cœur épinglé `4e440e5` (désormais
+`ae78ecd`, même arbre), sur un nouveau document jetable et avec un nouveau jeton
+fourni par la personne qui l'a lancé. Les sept étapes ont réussi (`ok: true`) :
 
 - passe `review` : onze groupes, dont un non suggéré (règle de l'euro) ;
 - commit partiel de six groupes sur onze : 9 requêtes au lieu de 17, relecture

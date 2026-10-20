@@ -1,8 +1,12 @@
 # Google Docs : prévisualisation des requêtes natives
 
-Le module expérimental `editor-sdk/src/google-docs.ts` constitue une première
-étape vers un adaptateur Google Docs. Il compile un plan en requêtes textuelles
-révisables ; il ne lit ni ne modifie aucun document distant.
+Le point d'entrée `@orthotypography/editor-sdk/google-docs`, publié en version
+alpha avec le SDK, réunit l'extraction, les compilateurs de requêtes, le contrat
+de transport, la revue et l'adaptateur REST décrits ci-dessous. Les compilateurs
+(`src/google-docs.ts` et `src/google-docs-style.ts`) transforment un plan en
+requêtes révisables ; ils ne lisent ni ne modifient aucun document distant.
+Seuls le transport et l'orchestration de revue écrivent, une fois par revue,
+sous condition de révision.
 
 ## Choix de la cible
 
@@ -70,35 +74,36 @@ formées, les retours de ligne et les caractères de contrôle ou privés BMP da
 les insertions. Ce sous-ensemble est volontairement plus strict que les
 caractères acceptés par Google.
 
-## Garanties restant à construire
+## Garanties et limites
 
 La table de plages est une entrée de confiance de l'extracteur : vérifier sa
 cohérence numérique ne prouve pas qu'elle correspond au document distant.
 L'identité, la révision, le texte et les plages doivent provenir de la même
 lecture. Une table ancienne de mêmes longueurs n'est pas détectable localement.
-Il faudra traiter explicitement les onglets, suggestions et éléments non
-textuels lors de l'extraction.
+L'extracteur traite explicitement les onglets imbriqués et les suggestions, et
+refuse les éléments non textuels (voir « Extraction des paragraphes »).
 
 Google détermine automatiquement le style des insertions à partir du voisinage.
-Le compilateur textuel ne rétablit pas les styles. Un second mode expérimental
-restaure désormais un sous-ensemble des styles (voir ci-dessous). Les liens, les
-frontières de paragraphes et les effets natifs restent à tester avant
-l'activation d'une écriture. La révision conditionnelle ne résout pas ces
-points.
+Le compilateur textuel ne rétablit pas les styles ; un second mode restaure un
+sous-ensemble des styles (voir ci-dessous). Les liens et les insertions aux
+frontières de paragraphes y restent refusés. La révision conditionnelle ne
+résout pas ces points.
 
 Aucun mécanisme OAuth, stockage de jeton ou retry n'est inclus. Le contrat
-abstrait `google-docs-transport.ts` orchestre désormais une lecture, une
-écriture conditionnelle unique et une relecture vérifiée. Un adaptateur REST
-isolé peut implémenter ses deux opérations avec un jeton et `fetch` injectés ;
-les autres hôtes peuvent fournir leur propre transport. Les tests rejouent les
-requêtes sur des chaînes, vérifient leur résultat contre les prévisualisations
-du SDK et couvrent les refus. Une
-[validation native limitée](google-docs-live-validation.md) couvre désormais les
-corrections, certains styles et le refus d’une révision périmée. L’étude des
-autres styles et des cas encore refusés reste à faire.
+abstrait `google-docs-transport.ts` orchestre une lecture, une écriture
+conditionnelle unique et une relecture vérifiée. L'adaptateur REST isolé
+implémente ses deux opérations avec un jeton et `fetch` injectés ; les autres
+hôtes peuvent fournir leur propre transport. Les tests rejouent les requêtes sur
+des chaînes, vérifient leur résultat contre les prévisualisations du SDK et
+couvrent les refus. Les [validations réelles](google-docs-live-validation.md)
+couvrent deux scénarios bornés : corrections, certains styles et refus d'une
+révision périmée par le connecteur Google Drive le 6 septembre 2026 ; passe
+`review`, acceptation par groupes, correction écartée et transport REST direct
+le 19 octobre 2026. Les autres styles et les cas encore refusés ne sont pas
+validés.
 
 Sources officielles consultées le 5 septembre 2026 : références `batchUpdate` et
-`Request` ci-dessus. Le module reste hors des paquets publiés.
+`Request` ci-dessus.
 
 ## Extraction des paragraphes
 
@@ -110,7 +115,7 @@ profondément figés.
 ```ts
 import { extractGoogleDocsBody } from "@orthotypography/editor-sdk/google-docs";
 
-// response : réponse complète de documents.get obtenue par le futur transport.
+// response : réponse complète de documents.get obtenue par le transport.
 const { snapshot, ranges } = extractGoogleDocsBody(response, "fr-FR");
 const plan = prepareDocumentPlan(snapshot, IMPRIMERIE_NATIONALE_RULES);
 const accepted = plan.runs.flatMap((run) => run.groups);
@@ -261,10 +266,11 @@ catégories du contrat commun.
 
 Un test d'intégration hors ligne relie l'adaptateur REST à l'orchestrateur avec
 les corps avant/après issus de la validation réelle. Il vérifie la séquence
-`GET`, `POST`, `GET`, les 24 requêtes stylées, la révision exigée, la relecture
+`GET`, `POST`, `GET`, les 26 requêtes stylées, la révision exigée, la relecture
 finale et l'absence du jeton dans le corps JSON. Ce test valide la composition
-et la sérialisation, pas l'accès réseau, le flux OAuth ou une nouvelle exécution
-contre le service Google.
+et la sérialisation, pas l'accès réseau ni le flux OAuth. L'exécution réelle du
+transport REST contre Google est consignée séparément, le 19 octobre 2026, dans
+[`google-docs-live-validation.md`](google-docs-live-validation.md).
 
 L'appel à `normalizeGoogleDocsDocument` constitue une demande d'écriture de tous
 les groupes lorsque le plan n'est pas vide. Pour une revue humaine,

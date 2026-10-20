@@ -17,11 +17,10 @@ engagement de date.
 | Dépendance du SDK          | Cœur publié `0.2.0-alpha.0`                                                                                                                                                                                                                                                                                                                 | [Manifeste SDK](../packages/editor-sdk/deno.json), `deno task core:status`                                                                                            |
 | Google Docs                | Extraction des paragraphes et onglets imbriqués, coordonnées UTF-16, compilation conditionnelle, restauration limitée des styles                                                                                                                                                                                                            | [Périmètre](google-docs-preview.md), [README SDK](../packages/editor-sdk/README.md)                                                                                   |
 | Transport et révision      | Transport REST injecté, relecture vérifiée, préparation / validation / abandon d'une révision proposée ; objets à usage unique                                                                                                                                                                                                              | [README SDK](../packages/editor-sdk/README.md)                                                                                                                        |
-| Tests SDK                  | 67 tests pour la release alpha.1 contre le cœur `0.1.0-alpha.3` ; 80 tests exécutés hors ligne le 19 octobre contre le commit `ae78ecd` du cœur, dont la passe `review`, les groupes, l'acceptation partielle, les corrections écartées et une relecture Google Docs simulée                                                                | Tests du SDK ; aucune exécution réelle                                                                                                                                |
+| Tests SDK                  | 84 tests hors ligne au 19 octobre, sur le cœur `0.2.0-alpha.0` (et sur ses sources au commit `ae78ecd`) : passe `review`, groupes, acceptation partielle, corrections écartées, relecture Google Docs simulée en segments fusionnés ou séparés                                                                                              | Tests du SDK, CI de `main`                                                                                                                                            |
 | Validation réelle          | Le 6 septembre, scénario limité via le connecteur Google Drive avec le cœur `0.1.0-alpha.2`. Le 19 octobre, scénario complet de la ligne `0.2` par le transport REST direct, avec le cœur `ae78ecd` : passe `review`, commit partiel par groupes, correction écartée conservée, restauration des styles, conflit de révision et idempotence | [Compte rendu](google-docs-live-validation.md)                                                                                                                        |
 
-Le SDK est dans `packages/editor-sdk`. L'ancien état expérimental non publié ne
-décrit plus la situation courante. Les deux points d'entrée `.` et
+Le SDK est dans `packages/editor-sdk`. Les deux points d'entrée `.` et
 `./google-docs` sont livrés dans le même paquet ; la version du SDK est
 indépendante de celle des trois adaptateurs Astro.
 
@@ -103,27 +102,21 @@ chaque version sur JSR et npm et du tag npm attendu.
 
 ## Prochaines tâches proposées
 
-1. **Cohérence documentaire et linguistique.** Actualiser les mentions « non
-   publié » et « aucun adaptateur natif » devenues obsolètes, notamment dans le
-   README SDK et les notes documentaires. Traduire en anglais la prose hors de
-   `docs/` et auditer les autres fichiers ; `RELEASING.md` et `CHANGELOG.md`
-   sont traduits. Terminé lorsque l'état publié, les limites et la politique
-   linguistique concordent sans modifier les données de test.
-2. **Google Docs : élargir la validation réelle.** Le transport REST est validé
+1. **Google Docs : élargir la validation réelle.** Le transport REST est validé
    le 19 octobre pour un scénario de trois paragraphes dans un onglet
    (préparation sans écriture, écriture conditionnelle, relecture, conflit de
    révision, idempotence ; `deno task live:rest`). Restent à couvrir, un cas à
    la fois : plusieurs onglets et un second utilisateur simultané. Conserver des
    comptes rendus bornés et distinguer ces tests de celui effectué via le
    connecteur.
-3. **Application cliente de référence.** Définir puis réaliser un parcours
+2. **Application cliente de référence.** Définir puis réaliser un parcours
    limité d'affichage des diagnostics, des groupes et de leurs indications
    `suggested`, acceptation de groupes entiers ou abandon, conservation et mise
    à jour des corrections écartées, nouvelle préparation après chaque
    acceptation et présentation des conflits et des groupes contradictoires.
    L'application gère les identifiants ; le SDK conserve son contrat atomique et
    ses exclusions.
-4. **Extension des capacités documentaires.** Prioriser une structure ou un cas
+3. **Extension des capacités documentaires.** Prioriser une structure ou un cas
    de style à la fois après les validations précédentes. Exiger des scénarios
    réels et des refus explicites avant d'élargir les garanties.
 
