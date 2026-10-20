@@ -62,8 +62,8 @@ packages keep a shared version during the alpha series.
 
 ## Editor SDK
 
-`@orthotypography/editor-sdk` has its own version. Its `.` and `./google-docs`
-entry points are always published together in one package.
+`@orthotypography/editor-sdk` has its own version and a single, editor-neutral
+entry point.
 
 1. Open a pull request that updates `packages/editor-sdk/deno.json` without
    changing the adapter versions, and updates `CHANGELOG.md`, `README.md`, and

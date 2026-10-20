@@ -8,12 +8,12 @@ This repository adapts the published
 [orthotypography engine](https://github.com/orthotypography/orthotypography) to
 other tools. It contains four packages:
 
-| Package                                               | Purpose                                                                  |
-| ----------------------------------------------------- | ------------------------------------------------------------------------ |
-| [`@orthotypography/rehype`](packages/rehype/)         | Unified and rehype plugin                                                |
-| [`@orthotypography/satteri`](packages/satteri/)       | native Sätteri HAST hooks                                                |
-| [`@orthotypography/astro`](packages/astro/)           | Astro integration for either Markdown processor                          |
-| [`@orthotypography/editor-sdk`](packages/editor-sdk/) | neutral document editor contract, with Google Docs under `./google-docs` |
+| Package                                               | Purpose                                         |
+| ----------------------------------------------------- | ----------------------------------------------- |
+| [`@orthotypography/rehype`](packages/rehype/)         | Unified and rehype plugin                       |
+| [`@orthotypography/satteri`](packages/satteri/)       | native Sätteri HAST hooks                       |
+| [`@orthotypography/astro`](packages/astro/)           | Astro integration for either Markdown processor |
+| [`@orthotypography/editor-sdk`](packages/editor-sdk/) | neutral document editor contract                |
 
 Typographic rules, the documentary catalogue, presets, diagnostics, and text
 changes belong in the engine repository. Integrations never re-implement or
@@ -130,12 +130,11 @@ inline nodes, and check idempotence where applicable.
   changes.
 - The editor SDK keeps plans and batches immutable and complete, validates
   revisions and source context, and rejects unsupported native structures
-  explicitly. Google Docs specifics stay under `./google-docs`.
+  explicitly. It contains no editor-specific API.
 - Fixtures must be sanitized. Never commit or log credentials, tokens, or
   private document content; credentials belong to the host application.
 - Offline tests do not establish live editor compatibility. Report live
-  validation separately and describe its exact scenario, as in
-  [`docs/google-docs-live-validation.md`](docs/google-docs-live-validation.md).
+  validation separately and describe its exact scenario.
 
 ## Pull requests
 

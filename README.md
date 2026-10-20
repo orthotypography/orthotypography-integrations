@@ -34,8 +34,7 @@ lane's core dependency. Publication remains gated by the repository variable
 
 [`packages/editor-sdk`](packages/editor-sdk/README.md) prepares immutable
 document correction plans and validates revisions and source context before
-native editor transactions. Its Google Docs subpath adds extraction, guarded
-review and an authentication-neutral REST transport.
+native editor transactions. It contains no editor-specific API.
 
 ```sh
 deno task editor:check

@@ -1,10 +1,19 @@
 # Paquetage du SDK pour éditeurs
 
-**Statut :** décision adoptée et appliquée. Le paquet a été publié en
-`0.1.0-alpha.0` (9 septembre 2026), `0.1.0-alpha.1` (26 septembre) et
-`0.2.0-alpha.0` (19 octobre) ; les sections « Périmètre de la première alpha »,
-« État des prérequis » et « Critères d'activation » sont conservées comme
+**Statut :** décision adoptée et appliquée, puis révisée le 20 octobre 2026. Le
+paquet a été publié en `0.1.0-alpha.0` (9 septembre 2026), `0.1.0-alpha.1` (26
+septembre) et `0.2.0-alpha.0` (19 octobre) avec les deux points d'entrée
+ci-dessous. Depuis le 20 octobre, `main` retire le point d'entrée
+`./google-docs` : le paquet n'expose plus que `.`, et ce retrait sera publié
+avec sa prochaine version. Les sections suivantes sont conservées comme
 historique de la décision.
+
+## Révision du 20 octobre 2026
+
+Le paquet ne contient plus d'adaptateur propre à un éditeur. Un adaptateur
+dépend du point d'entrée public `@orthotypography/editor-sdk` et suit son propre
+cycle de version, hors de ce paquet ; le contrat neutre, son adaptateur en
+mémoire et ses contrôles de publication restent dans ce dépôt.
 
 ## Décision
 

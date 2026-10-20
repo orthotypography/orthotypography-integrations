@@ -7,6 +7,13 @@ and Astro adapters (`rehype`, `satteri`, and `astro`) share one version and the
 
 ## Unreleased
 
+### Editor SDK
+
+- **Breaking:** the `./google-docs` entry point is no longer part of this
+  package. `@orthotypography/editor-sdk` now exposes only its editor-neutral
+  entry point; versions up to `0.2.0-alpha.0` remain available on JSR and npm
+  unchanged.
+
 ### Repository
 
 - `deno task core:status` reports whether each release lane depends on a

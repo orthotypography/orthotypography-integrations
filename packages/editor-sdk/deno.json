@@ -3,8 +3,7 @@
   "version": "0.2.0-alpha.0",
   "license": "MIT",
   "exports": {
-    ".": "./mod.ts",
-    "./google-docs": "./google-docs.ts"
+    ".": "./mod.ts"
   },
   "imports": {
     "@orthotypography/core": "jsr:@orthotypography/core@0.2.0-alpha.0"
@@ -13,13 +12,11 @@
     "include": [
       "README.md",
       "mod.ts",
-      "google-docs.ts",
       "src/**/*.ts"
     ]
   },
   "tasks": {
-    "check": "deno fmt --check && deno lint && deno check mod.ts google-docs.ts src/*.ts tests/*.ts live/*.ts && deno doc mod.ts && deno doc google-docs.ts",
-    "test": "deno test tests",
-    "live:rest": "deno run --allow-env=GOOGLE_DOCS_ACCESS_TOKEN,GOOGLE_DOCS_DOCUMENT_ID --allow-net=docs.googleapis.com --allow-write=live-report.json live/google_docs_rest_check.ts"
+    "check": "deno fmt --check && deno lint && deno check mod.ts src/*.ts tests/*.ts && deno doc mod.ts",
+    "test": "deno test tests"
   }
 }

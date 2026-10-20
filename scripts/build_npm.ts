@@ -254,13 +254,7 @@ await buildPackage("astro", () => ({
 }));
 
 await buildPackage("editor-sdk", () => ({
-  entryPoints: [
-    "./packages/editor-sdk/mod.ts",
-    {
-      name: "./google-docs",
-      path: "./packages/editor-sdk/google-docs.ts",
-    },
-  ],
+  entryPoints: ["./packages/editor-sdk/mod.ts"],
   outDir: "./npm/editor-sdk",
   esModule: true,
   scriptModule: false,
@@ -273,8 +267,7 @@ await buildPackage("editor-sdk", () => ({
   package: {
     name: editorSdkConfig.name,
     version: editorSdkConfig.version,
-    description:
-      "Guarded document editor plans and Google Docs transport primitives",
+    description: "Guarded, editor-neutral document plans and atomic batches",
     author: "Antoine Boquet",
     license: editorSdkConfig.license,
     homepage:
@@ -291,7 +284,6 @@ await buildPackage("editor-sdk", () => ({
     },
     keywords: [
       "editor",
-      "google-docs",
       "typography",
       "orthotypography",
       "unicode",

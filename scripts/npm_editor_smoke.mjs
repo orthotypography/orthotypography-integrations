@@ -26,10 +26,7 @@ const editorSdk = await importEntry(".");
 assert.equal(typeof editorSdk.prepareDocumentPlan, "function");
 assert.equal(typeof editorSdk.createMemoryDocument, "function");
 
-const googleDocs = await importEntry("./google-docs");
-assert.equal(typeof googleDocs.extractGoogleDocsBody, "function");
-assert.equal(typeof googleDocs.prepareGoogleDocsReview, "function");
-assert.equal(typeof googleDocs.createGoogleDocsRestTransport, "function");
+assert.deepEqual(Object.keys(packageJson.exports), ["."]);
 
 assert.equal(packageJson.name, "@orthotypography/editor-sdk");
 assert.equal(packageJson.version, editorConfig.version);

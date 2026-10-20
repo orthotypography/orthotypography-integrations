@@ -8,8 +8,9 @@ dependency.
 This is an alpha release. Its API may change before `1.0.0`. It uses
 `@orthotypography/core@0.2.0-alpha.0`.
 
-The package exposes `.` for the neutral contract and `./google-docs` for the
-provider-specific surface. It uses an independent version from the Astro
+The package exposes a single, editor-neutral entry point. Versions up to
+`0.2.0-alpha.0` also shipped a `./google-docs` entry point, which is no longer
+part of this package. It uses an independent version from the Astro
 integrations. The
 [packaging note](https://github.com/orthotypography/orthotypography-integrations/blob/main/docs/editor-sdk-packaging-v0.1.md)
 records that decision.
@@ -139,140 +140,7 @@ processes.
 
 ## Adapter responsibilities
 
-The
-[Google Docs request compiler](https://github.com/orthotypography/orthotypography-integrations/blob/main/docs/google-docs-preview.md)
-is available through the `./google-docs` entry point. It produces review-only
-native request payloads from caller-supplied body-text ranges. The companion
-`extractGoogleDocsBody` function extracts plain body paragraphs and ranges from
-a full Google Docs GET response, including nested tabs. It requires
-`SUGGESTIONS_INLINE`, rejects suggestions and unsupported body structures, and
-takes an explicit locale. Neither module performs network requests. Raw text
-styles are retained on native ranges, outside the editor-neutral snapshot. Both
-compilers take the accepted groups and compile only their changes.
-`previewGoogleDocsStyledRequests` additionally restores source-node styles on
-interior insertions using an explicit reset mask. This opt-in mode requires
-style metadata for every range and rejects links, unsupported properties,
-ambiguous insertions, and paragraph-edge insertions. Its behavior is tested with
-synthetic request replay and a
-[limited live Google Docs validation](https://github.com/orthotypography/orthotypography-integrations/blob/main/docs/google-docs-live-validation.md)
-covering nested tabs, mixed styles, UTF-16 offsets, idempotence, and
-stale-revision rejection. This is not a general style-preservation guarantee.
-The text-only compiler never adds style requests.
-
-`normalizeGoogleDocsDocument` composes the extractor and either request compiler
-behind a minimal asynchronous transport interface. The host must provide
-complete inline-suggestions reads and map its provider responses to the explicit
-write result categories. The orchestrator:
-
-- reads and extracts once, prepares one plan, accepts every group, and writes
-  the resulting request batch once with the original required revision;
-- returns `revision-conflict` without retrying or reconstructing the stale plan;
-- throws `GoogleDocsTransportFailure` for classified permission,
-  invalid-request, transient, and unknown failures;
-- performs one complete readback after a reported success and throws
-  `GoogleDocsReadbackError` unless document identity, revision, paragraph text,
-  tab placement, and (in styled mode) source styles reproduce the accepted
-  groups;
-- skips both the write and second read when the accepted groups change nothing.
-
-The interface contains no HTTP client, OAuth flow, provider error parser, retry
-policy, or connector-specific response conversion. In particular, an adapter for
-a flattened connector response must reconstruct and validate native tab topology
-before returning it from `read`.
-
-`createGoogleDocsRestTransport` is the isolated Google Docs v1 implementation.
-It uses an injected `getAccessToken` callback and an injectable
-standards-compatible `fetch`; it does not acquire, refresh, store, or log
-credentials. Reads request complete tab content with inline suggestions. Writes
-send the compiler requests and `requiredRevisionId` unchanged to
-`documents.batchUpdate`. HTTP 401/403 responses become permission failures,
-408/429/5xx responses become transient failures, and other 400 responses become
-invalid requests. The live-observed Google `INVALID_ARGUMENT` response is
-recognized as a revision conflict only when its message states that the required
-revision does not match the latest revision. Unknown or changed provider error
-shapes remain `unknown` or `invalid-request`; they are never guessed to be safe
-conflicts. Network failures are classified without exposing their raw diagnostic
-messages. A live run on 19 October 2026 exercised this transport against Google
-Docs, including a real revision conflict, for the scenario recorded in the
-[live validation report](https://github.com/orthotypography/orthotypography-integrations/blob/main/docs/google-docs-live-validation.md).
-
-```ts
-import { IMPRIMERIE_NATIONALE_RULES } from "@orthotypography/core";
-import {
-  createGoogleDocsRestTransport,
-  normalizeGoogleDocsDocument,
-} from "@orthotypography/editor-sdk/google-docs";
-
-const transport = createGoogleDocsRestTransport({
-  // Credential acquisition and refresh remain application responsibilities.
-  getAccessToken: () => applicationAccessToken,
-});
-const result = await normalizeGoogleDocsDocument(
-  transport,
-  documentId,
-  "fr-FR",
-  IMPRIMERIE_NATIONALE_RULES,
-  { preserveStyles: true },
-);
-if (result.status === "revision-conflict") {
-  // Ask the user to review a newly prepared plan; never replay this one.
-}
-```
-
-Calling `normalizeGoogleDocsDocument` authorizes the transport to write every
-group of the prepared plan when it is nonempty. Applications that require human
-review can separate the two phases and accept whole groups without
-reconstructing any SDK object:
-
-```ts
-import {
-  commitGoogleDocsReview,
-  discardGoogleDocsReview,
-  prepareGoogleDocsReview,
-} from "@orthotypography/editor-sdk/google-docs";
-
-const review = await prepareGoogleDocsReview(
-  transport,
-  documentId,
-  "fr-FR",
-  IMPRIMERIE_NATIONALE_RULES,
-  // Proposals the user declined earlier, kept by the application.
-  { preserveStyles: true, dismissed },
-);
-// Display review.plan diagnostics, groups, and preview; this has not written.
-// review.mode discriminates text-only and style-preserving request payloads.
-if (acceptedGroups.length > 0) {
-  // Original group objects of review.plan, selected by the user.
-  const outcome = await commitGoogleDocsReview(
-    transport,
-    review,
-    acceptedGroups,
-  );
-  // outcome.committed holds the requests written for outcome.accepted.
-} else {
-  discardGoogleDocsReview(transport, review);
-}
-```
-
-`review.preview` compiles every group; a commit compiles only the accepted
-groups, writes them once under the revision that was read, and verifies the
-readback against them. An invalid selection is rejected before the review is
-consumed. Only the original frozen review object can be committed, with the same
-transport instance that read it. A review is consumed before its single write
-attempt: success, conflict, failure, and concurrent calls cannot cause it to be
-replayed. Cloned, reconstructed, deserialized, or already consumed reviews are
-rejected. The review type is nominal, so ordinary TypeScript code cannot
-reconstruct it structurally. Explicitly discard a rejected or closed review to
-make that decision irreversible in the current module session. The server-side
-revision condition remains authoritative if the document changes while the user
-is reviewing.
-
-Every review exposes a stable `mode` discriminant. `"text"` contains only delete
-and insert requests; `"preserve-styles"` may additionally contain supported
-style restoration requests. Consumers should narrow on this field rather than
-infer the payload shape from application state. Literal `preserveStyles` options
-also select precise return types for preparation and immediate normalization,
-and committing a review preserves its mode in the result type.
+An adapter for a native editor must:
 
 - Read text and its revision consistently. Advance the revision for relevant
   text, structure, formatting, language, and protection changes, including
@@ -293,8 +161,7 @@ and committing a review preserves its mode in the result type.
 
 If the host cannot guarantee an atomic conditional commit, this contract
 supports preview and diagnostics only until the adapter supplies an equivalent
-mechanism. The in-memory reference adapter and the `./google-docs` entry point
-implement this contract.
+mechanism. The in-memory reference adapter implements this contract.
 
 ## Development
 
@@ -304,15 +171,6 @@ From this directory:
 deno task check
 deno task test
 ```
-
-`./live/run.sh` (or `deno task live:rest`) runs a live Google Docs check of the
-review pass, group acceptance, dismissed proposals, and the REST transport on a
-throwaway document. It prompts for the document URL or ID and a caller-supplied
-access token (or reads `GOOGLE_DOCS_DOCUMENT_ID` and
-`GOOGLE_DOCS_ACCESS_TOKEN`), writes a sanitized `live-report.json`, and refuses
-any document whose title does not start with `orthotypography-live-check` or
-whose body is not a single empty paragraph. See the
-[procedure](https://github.com/orthotypography/orthotypography-integrations/blob/main/docs/google-docs-live-validation.md#ligne-02--procédure-de-validation-par-le-transport-rest).
 
 The independent configuration and CI job do not alter the released packages'
 builds, dependency versions, or publishing workflow.
