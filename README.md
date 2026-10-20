@@ -25,7 +25,7 @@ deno task npm:check
 ```
 
 The three content adapters `0.2.0-alpha.0` and the independently versioned
-editor SDK `0.2.0-alpha.0` are published on JSR and npm and depend on
+editor SDK `0.3.0-alpha.0` are published on JSR and npm and depend on
 `@orthotypography/core@0.2.0-alpha.0`. `deno task core:status` reports each
 lane's core dependency. Publication remains gated by the repository variable
 `PUBLISH_ENABLED`, and a lane pinned to a development core cannot be published.
