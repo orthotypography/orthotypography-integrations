@@ -3,9 +3,10 @@
 Le paquet `packages/editor-sdk`, publié sous le nom
 `@orthotypography/editor-sdk` (version `0.2.0-alpha.0` au 19 octobre 2026),
 appartient aux intégrations. Le cœur reste indépendant de Word, Google Docs,
-ONLYOFFICE et LibreOffice. Ce document décrit le point d'entrée neutre `.`, qui
-ne contient aucune API propre à ces éditeurs ; le point d'entrée `./google-docs`
-est décrit dans [`google-docs-preview.md`](google-docs-preview.md).
+ONLYOFFICE et LibreOffice. Ce document décrit le point d'entrée neutre `.`, seul
+point d'entrée du paquet sur `main`, qui ne contient aucune API propre à ces
+éditeurs. Les versions publiées jusqu'à `0.2.0-alpha.0` comprenaient aussi un
+point d'entrée `./google-docs`, retiré depuis.
 
 ## Contrat
 
@@ -89,15 +90,12 @@ Ces révisions sont opaques et propres à la durée de vie d'une instance. Cette
 référence ne modélise ni les styles natifs, ni la sélection, ni l'historique
 d'annulation, ni la coordination entre processus.
 
-Les points d'entrée `mod.ts` (`.`) et `google-docs.ts` (`./google-docs`)
-séparent respectivement le contrat neutre et l'intégration Google Docs. Cette
-dernière couvre l'extraction, la prévisualisation, la restauration limitée des
-styles, le transport conditionnel, la revue explicite et l'adaptateur REST ; sa
-validation réelle est bornée aux scénarios consignés dans
-[`google-docs-live-validation.md`](google-docs-live-validation.md). Les deux
-points d'entrée restent en version alpha.
+Le point d'entrée `mod.ts` (`.`) porte l'intégralité du contrat neutre et reste
+en version alpha. Un adaptateur d'éditeur dépend de ce point d'entrée public et
+garde hors du paquet les plages natives, les styles, les transports et les
+identifiants propres à son fournisseur.
 
 La [décision de paquetage](./editor-sdk-packaging-v0.1.md) retient un paquet
-`@orthotypography/editor-sdk` indépendant du groupe de versions Astro, avec les
-exports `.` et `./google-docs`. Un workflow distinct applique son propre tag de
-release et sa reprise partielle sans modifier les versions des adaptateurs.
+`@orthotypography/editor-sdk` indépendant du groupe de versions Astro. Un
+workflow distinct applique son propre tag de release et sa reprise partielle
+sans modifier les versions des adaptateurs.

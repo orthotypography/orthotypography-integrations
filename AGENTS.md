@@ -50,9 +50,10 @@ not introduce a model service into the normalization engine.
   text runs, protected content, and inline node structure.
 - Use source-coordinate `TextChange` sets for edits, not diagnostic replacement
   strings or whole-node preview replacement.
-- Keep the editor SDK's neutral entry point independent of editor providers.
-  Google Docs extraction, native ranges, styles, and transport belong in its
-  dedicated `./google-docs` entry point.
+- Keep the editor SDK independent of editor providers. Native ranges, styles,
+  transports, and provider identifiers belong in editor-specific adapters
+  outside this package; do not add a provider entry point without a recorded
+  decision.
 - Validate full snapshot context and revision. Recheck the revision inside the
   native atomic transaction; preflight validation alone cannot prevent races.
 - Preserve nominal, immutable plan/review objects and atomic batches. Partial
@@ -61,8 +62,7 @@ not introduce a model service into the normalization engine.
   stays atomic and is revalidated inside the native transaction. Do not support
   reconstruction, replay, or stale retries.
 - Dismissed proposals belong to the client application, which keeps them and
-  updates their ranges; the SDK only passes them to the core pass. Google Docs
-  run IDs, styles, and transports stay in the `./google-docs` entry point.
+  updates their ranges; the SDK only passes them to the core pass.
 - Reject unsupported native structures and style operations explicitly. Keep
   live validation claims bounded by the recorded scenarios.
 - Credential acquisition, refresh, and storage belong to the host application.

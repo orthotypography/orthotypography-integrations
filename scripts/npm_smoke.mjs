@@ -72,12 +72,4 @@ if (selectedLane === undefined || selectedLane === "editor-sdk") {
     editorSdk.packageJson.dependencies["@orthotypography/core"],
     editorCoreVersion,
   );
-
-  const googleDocs = await importPackage("editor-sdk", "./google-docs");
-  assert.equal(typeof googleDocs.module.extractGoogleDocsBody, "function");
-  assert.equal(typeof googleDocs.module.prepareGoogleDocsReview, "function");
-  assert.equal(
-    typeof googleDocs.module.createGoogleDocsRestTransport,
-    "function",
-  );
 }

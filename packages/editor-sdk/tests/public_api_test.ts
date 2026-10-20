@@ -4,33 +4,20 @@ import {
   prepareDocumentPlan,
   validateDocumentPlan,
 } from "../mod.ts";
-import {
-  commitGoogleDocsReview,
-  createGoogleDocsRestTransport,
-  discardGoogleDocsReview,
-  extractGoogleDocsBody,
-  normalizeGoogleDocsDocument,
-  prepareGoogleDocsReview,
-  previewGoogleDocsRequests,
-  previewGoogleDocsStyledRequests,
-} from "../google-docs.ts";
+import config from "../deno.json" with { type: "json" };
 
-Deno.test("public entry points expose supported APIs", () => {
+Deno.test("the public entry point exposes supported APIs", () => {
   for (
     const value of [
       createMemoryDocument,
       prepareDocumentPlan,
       validateDocumentPlan,
-      commitGoogleDocsReview,
-      createGoogleDocsRestTransport,
-      discardGoogleDocsReview,
-      extractGoogleDocsBody,
-      normalizeGoogleDocsDocument,
-      prepareGoogleDocsReview,
-      previewGoogleDocsRequests,
-      previewGoogleDocsStyledRequests,
     ]
   ) {
     assert.equal(typeof value, "function");
   }
+});
+
+Deno.test("the package declares only the neutral entry point", () => {
+  assert.deepEqual(config.exports, { ".": "./mod.ts" });
 });
