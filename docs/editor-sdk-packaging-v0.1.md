@@ -3,10 +3,9 @@
 **Statut :** décision adoptée et appliquée, puis révisée le 20 octobre 2026. Le
 paquet a été publié en `0.1.0-alpha.0` (9 septembre 2026), `0.1.0-alpha.1` (26
 septembre) et `0.2.0-alpha.0` (19 octobre) avec les deux points d'entrée
-ci-dessous. Depuis le 20 octobre, `main` retire le point d'entrée
-`./google-docs` : le paquet n'expose plus que `.`, et ce retrait sera publié
-avec sa prochaine version. Les sections suivantes sont conservées comme
-historique de la décision.
+ci-dessous. La version `0.3.0-alpha.0`, publiée le 20 octobre, retire le point
+d'entrée `./google-docs` : le paquet n'expose plus que `.`. Les sections
+suivantes sont conservées comme historique de la décision.
 
 ## Révision du 20 octobre 2026
 

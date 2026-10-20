@@ -1,13 +1,13 @@
 # Feuille de route des intégrations
 
-État vérifié le 20 octobre 2026. Les adaptateurs `0.2.0-alpha.0` et le SDK
-`0.2.0-alpha.0` sont publiés sur JSR et npm (tag `latest`), sur le cœur publié
-`0.2.0-alpha.0`, depuis le commit
+État vérifié le 20 octobre 2026. Les adaptateurs `0.2.0-alpha.0` sont publiés
+sur JSR et npm (tag `latest`) depuis le commit
 [`233cef6`](https://github.com/orthotypography/orthotypography-integrations/commit/233cef63a56110465d26610798d6f6f99ce2f1d1)
-(§ « Publication du 19 octobre »). Depuis le 20 octobre, `main` ne contient plus
-le point d'entrée `./google-docs` du SDK ; ce retrait est préparé en
-`0.3.0-alpha.0`, non publié. Les tâches ci-dessous sont proposées, sans
-engagement de date.
+(§ « Publication du 19 octobre ») ; le SDK `0.3.0-alpha.0`, qui n'a plus de
+point d'entrée `./google-docs`, l'est depuis le commit
+[`e645e4a`](https://github.com/orthotypography/orthotypography-integrations/commit/e645e4a6363fbb02f05bc7d6848676e2ee837494)
+(§ « Publication du 20 octobre »). Les deux voies dépendent du cœur publié
+`0.2.0-alpha.0`. Les tâches ci-dessous sont proposées, sans engagement de date.
 
 ## État acquis
 
@@ -15,9 +15,9 @@ engagement de date.
 | -------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Markdown / Astro           | Rehype, Sätteri et Astro publiés en `0.2.0-alpha.0`, cible Astro 7 ; processeur configuré préservé, diagnostics en coordonnées sources et changements localisés exposés, application tout ou rien                                                                | [Release](https://github.com/orthotypography/orthotypography-integrations/releases/tag/v0.2.0-alpha.0), [configuration](../deno.json)                                                 |
 | Dépendance des adaptateurs | Cœur publié `0.2.0-alpha.0`                                                                                                                                                                                                                                      | [Configuration](../deno.json), `deno task core:status`                                                                                                                                |
-| SDK neutre                 | `@orthotypography/editor-sdk@0.2.0-alpha.0` publié ; passe `review` unique, groupes de propositions, acceptation par groupes entiers, propositions écartées ; plans immuables, validation complète, adaptateur atomique en mémoire                               | [Release SDK](https://github.com/orthotypography/orthotypography-integrations/releases/tag/editor-sdk-v0.2.0-alpha.0), [README SDK](../packages/editor-sdk/README.md)                 |
+| SDK neutre                 | `@orthotypography/editor-sdk@0.3.0-alpha.0` publié, point d'entrée neutre unique ; passe `review` unique, groupes de propositions, acceptation par groupes entiers, propositions écartées ; plans immuables, validation complète, adaptateur atomique en mémoire | [Release SDK](https://github.com/orthotypography/orthotypography-integrations/releases/tag/editor-sdk-v0.3.0-alpha.0), [README SDK](../packages/editor-sdk/README.md)                 |
 | Dépendance du SDK          | Cœur publié `0.2.0-alpha.0`                                                                                                                                                                                                                                      | [Manifeste SDK](../packages/editor-sdk/deno.json), `deno task core:status`                                                                                                            |
-| Point d'entrée Google Docs | Livré dans `@orthotypography/editor-sdk` jusqu'à `0.2.0-alpha.0` ; retiré de `main` le 20 octobre ; retrait préparé en `0.3.0-alpha.0`, non publié. L'adaptateur Google Docs est développé hors de ce dépôt                                                      | [CHANGELOG](../CHANGELOG.md), [manifeste SDK](../packages/editor-sdk/deno.json)                                                                                                       |
+| Point d'entrée Google Docs | Livré dans `@orthotypography/editor-sdk` jusqu'à `0.2.0-alpha.0` ; retiré en `0.3.0-alpha.0`, publié le 20 octobre. L'adaptateur Google Docs est développé hors de ce dépôt                                                                                      | [CHANGELOG](../CHANGELOG.md), [manifeste SDK](../packages/editor-sdk/deno.json)                                                                                                       |
 | Tests SDK                  | 33 tests hors ligne au 20 octobre, sur le cœur `0.2.0-alpha.0` : passe `review`, groupes, acceptation partielle, corrections écartées, adaptateur en mémoire, point d'entrée unique                                                                              | Tests du SDK, CI                                                                                                                                                                      |
 | Validation réelle          | Le point d'entrée Google Docs a été validé en réel le 6 septembre (connecteur Google Drive, cœur `0.1.0-alpha.2`) et le 19 octobre (transport REST, cœur `ae78ecd`) ; ces validations portaient sur le SDK et ce point d'entrée ensemble, à leur version d'alors | [Compte rendu au commit `cabfce0`](https://github.com/orthotypography/orthotypography-integrations/blob/cabfce09e9f7db0359d69d7a24b019b9c3deafce/docs/google-docs-live-validation.md) |
 
@@ -91,22 +91,32 @@ deux workflows, relancés par `workflow_dispatch` avec leur tag entre 20 h 07 et
 20 h 08 UTC, ont réussi, y compris leur vérification finale de la présence de
 chaque version sur JSR et npm et du tag npm attendu.
 
+## Publication du 20 octobre
+
+La release GitHub
+[`editor-sdk-v0.3.0-alpha.0`](https://github.com/orthotypography/orthotypography-integrations/releases/tag/editor-sdk-v0.3.0-alpha.0)
+a été publiée à 8 h 26 UTC sur `e645e4a`, dont la CI passait (`test`,
+`npm-package`, `editor-sdk`). Son workflow a réussi en une seule exécution,
+terminée à 9 h 48 UTC : contrôles du SDK, essai à blanc JSR, construction, smoke
+test et contrôle de l'archive npm, publication sur JSR puis npm, et vérification
+finale de la présence de la version sur les deux registres et du tag npm
+attendu. Le paquet npm est en `0.3.0-alpha.0`, tag `latest`, avec attestation de
+provenance et `gitHead` `e645e4a` ; il n'exporte que `.`. Les adaptateurs ne
+sont pas republiés.
+
 ## Prochaines tâches proposées
 
-1. **Publier le SDK `0.3.0-alpha.0`.** Cette version, préparée sans modifier les
-   adaptateurs, ne contient que le retrait cassant de `./google-docs` consigné
-   dans le [CHANGELOG](../CHANGELOG.md). Publier sur instruction explicite, puis
-   mettre à jour cette feuille avec les preuves de publication.
-2. **Application cliente de référence.** Définir puis réaliser un parcours
+1. **Application cliente de référence.** Définir puis réaliser un parcours
    limité d'affichage des diagnostics, des groupes et de leurs indications
    `suggested`, acceptation de groupes entiers ou abandon, conservation et mise
    à jour des corrections écartées, nouvelle préparation après chaque
    acceptation et présentation des conflits et des groupes contradictoires.
    L'application gère les identifiants ; le SDK conserve son contrat atomique et
    ses exclusions.
-3. **Extension des capacités documentaires.** Prioriser une structure ou un cas
-   de style à la fois après les validations précédentes. Exiger des scénarios
-   réels et des refus explicites avant d'élargir les garanties.
+2. **Extension du contrat neutre.** Traiter un besoin d'adaptateur à la fois
+   (structure ou métadonnée à décrire dans l'instantané), sans y introduire
+   d'API propre à un éditeur. Exiger des refus explicites et des tests hors
+   ligne avant d'élargir les garanties.
 
 ## Coordination et releases
 

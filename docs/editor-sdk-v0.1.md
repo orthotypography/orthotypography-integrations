@@ -1,7 +1,7 @@
 # SDK pour éditeurs de documents : contrat neutre
 
 Le paquet `packages/editor-sdk`, publié sous le nom
-`@orthotypography/editor-sdk` (version `0.2.0-alpha.0` au 19 octobre 2026),
+`@orthotypography/editor-sdk` (version `0.3.0-alpha.0` au 20 octobre 2026),
 appartient aux intégrations. Le cœur reste indépendant de Word, Google Docs,
 ONLYOFFICE et LibreOffice. Ce document décrit le point d'entrée neutre `.`, seul
 point d'entrée du paquet sur `main`, qui ne contient aucune API propre à ces
