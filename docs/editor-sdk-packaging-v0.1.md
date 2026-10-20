@@ -1,6 +1,12 @@
 # Paquetage du SDK pour éditeurs
 
-## Décision proposée
+**Statut :** décision adoptée et appliquée. Le paquet a été publié en
+`0.1.0-alpha.0` (9 septembre 2026), `0.1.0-alpha.1` (26 septembre) et
+`0.2.0-alpha.0` (19 octobre) ; les sections « Périmètre de la première alpha »,
+« État des prérequis » et « Critères d'activation » sont conservées comme
+historique de la décision.
+
+## Décision
 
 Le SDK forme un seul paquet `@orthotypography/editor-sdk` avec deux points
 d'entrée publics :
@@ -19,8 +25,9 @@ divergent réellement.
 
 Le paquet n'entre pas dans le groupe de versions commun à `rehype`, `satteri` et
 `astro`. Son évolution dépend du contrat d'éditeur et du cœur, non des versions
-d'Astro. Sa première version est donc `0.1.0-alpha.0`, indépendamment de la
-prochaine version des trois intégrations existantes.
+d'Astro. Sa première version a donc été `0.1.0-alpha.0`, indépendamment de la
+version des trois intégrations existantes ; les deux voies n'ont jamais été
+alignées implicitement depuis.
 
 ## Périmètre de la première alpha
 
@@ -42,19 +49,20 @@ Les en-têtes, pieds de page, notes, tableaux, objets incorporés, liens lors de
 insertions stylées, OAuth, stockage de jetons, retries et interface utilisateur
 restent exclus. Ces limites doivent apparaître dans le README publié.
 
-## État des prérequis
+## État des prérequis (septembre 2026)
 
-`@orthotypography/core@0.1.0-alpha.2`, qui contient `applyTextChanges`, est
+`@orthotypography/core@0.1.0-alpha.2`, qui contient `applyTextChanges`, était
 publié sous la même version immuable sur JSR et npm. La configuration autonome
-du SDK utilise désormais cette version plutôt qu'une URL de commit.
+du SDK utilisait alors cette version plutôt qu'une URL de commit ; elle dépend
+aujourd'hui de `@orthotypography/core@0.2.0-alpha.0`.
 
 Le paquet réside désormais dans `packages/editor-sdk`, avec sa propre version,
 ses deux exports et ses contrôles de publication. Son workflow et son registre
 de reprise restent séparés de ceux des trois adaptateurs Astro.
 
-## Critères d'activation
+## Critères d'activation (septembre 2026)
 
-La PR d'activation satisfait les critères suivants sans publier de paquet :
+La PR d'activation satisfaisait les critères suivants sans publier de paquet :
 
 1. publier une nouvelle alpha de `@orthotypography/core` contenant
    `applyTextChanges` — fait avec `0.1.0-alpha.2` ;
@@ -73,5 +81,5 @@ La PR d'activation satisfait les critères suivants sans publier de paquet :
    fixtures de validation réelle dans les archives publiées — fait dans les
    contrôles JSR et npm.
 
-La présente PR reste sans publication. Après fusion, une release portant le tag
-`editor-sdk-v0.1.0-alpha.0` pourra déclencher sa première publication.
+La PR d'activation n'a rien publié ; la release `editor-sdk-v0.1.0-alpha.0` a
+ensuite déclenché la première publication, le 9 septembre 2026.

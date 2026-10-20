@@ -139,8 +139,9 @@ processes.
 
 ## Adapter responsibilities
 
-An initial [Google Docs request compiler](../../docs/google-docs-preview.md) is
-available through the `google-docs.ts` entry point. It produces review-only
+The
+[Google Docs request compiler](https://github.com/orthotypography/orthotypography-integrations/blob/main/docs/google-docs-preview.md)
+is available through the `./google-docs` entry point. It produces review-only
 native request payloads from caller-supplied body-text ranges. The companion
 `extractGoogleDocsBody` function extracts plain body paragraphs and ranges from
 a full Google Docs GET response, including nested tabs. It requires
@@ -153,10 +154,10 @@ interior insertions using an explicit reset mask. This opt-in mode requires
 style metadata for every range and rejects links, unsupported properties,
 ambiguous insertions, and paragraph-edge insertions. Its behavior is tested with
 synthetic request replay and a
-[limited live Google Docs validation](../../docs/google-docs-live-validation.md)
+[limited live Google Docs validation](https://github.com/orthotypography/orthotypography-integrations/blob/main/docs/google-docs-live-validation.md)
 covering nested tabs, mixed styles, UTF-16 offsets, idempotence, and
 stale-revision rejection. This is not a general style-preservation guarantee.
-The original text-only preview remains unchanged.
+The text-only compiler never adds style requests.
 
 `normalizeGoogleDocsDocument` composes the extractor and either request compiler
 behind a minimal asynchronous transport interface. The host must provide
@@ -191,7 +192,9 @@ recognized as a revision conflict only when its message states that the required
 revision does not match the latest revision. Unknown or changed provider error
 shapes remain `unknown` or `invalid-request`; they are never guessed to be safe
 conflicts. Network failures are classified without exposing their raw diagnostic
-messages.
+messages. A live run on 19 October 2026 exercised this transport against Google
+Docs, including a real revision conflict, for the scenario recorded in the
+[live validation report](https://github.com/orthotypography/orthotypography-integrations/blob/main/docs/google-docs-live-validation.md).
 
 ```ts
 import { IMPRIMERIE_NATIONALE_RULES } from "@orthotypography/core";
@@ -309,7 +312,7 @@ access token (or reads `GOOGLE_DOCS_DOCUMENT_ID` and
 `GOOGLE_DOCS_ACCESS_TOKEN`), writes a sanitized `live-report.json`, and refuses
 any document whose title does not start with `orthotypography-live-check` or
 whose body is not a single empty paragraph. See the
-[procedure](../../docs/google-docs-live-validation.md#ligne-02--procédure-de-validation-par-le-transport-rest).
+[procedure](https://github.com/orthotypography/orthotypography-integrations/blob/main/docs/google-docs-live-validation.md#ligne-02--procédure-de-validation-par-le-transport-rest).
 
 The independent configuration and CI job do not alter the released packages'
 builds, dependency versions, or publishing workflow.

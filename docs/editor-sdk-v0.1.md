@@ -1,8 +1,11 @@
-# SDK pour éditeurs de documents : première base expérimentale
+# SDK pour éditeurs de documents : contrat neutre
 
-Le paquet `packages/editor-sdk` appartient aux intégrations. Le cœur reste
-indépendant de Word, Google Docs, ONLYOFFICE et LibreOffice. Aucune API propre à
-ces éditeurs n'est introduite dans cette étape.
+Le paquet `packages/editor-sdk`, publié sous le nom
+`@orthotypography/editor-sdk` (version `0.2.0-alpha.0` au 19 octobre 2026),
+appartient aux intégrations. Le cœur reste indépendant de Word, Google Docs,
+ONLYOFFICE et LibreOffice. Ce document décrit le point d'entrée neutre `.`, qui
+ne contient aucune API propre à ces éditeurs ; le point d'entrée `./google-docs`
+est décrit dans [`google-docs-preview.md`](google-docs-preview.md).
 
 ## Contrat
 
@@ -65,13 +68,13 @@ une modification concurrente entre lecture et écriture. Si l'hôte ne fournit p
 de mécanisme équivalent, limiter l'intégration à l'analyse et à la
 prévisualisation tant que cette garantie n'est pas résolue.
 
-## Versionnement et suite
+## Versionnement et adaptateur de référence
 
-La configuration autonome du SDK épingle sa propre version du cœur, publiée ou,
-pendant la préparation d'une ligne du cœur, un commit immuable documenté dans la
-feuille de route ; dans ce dernier cas, le SDK ne peut être ni empaqueté ni
-publié. Deno sert uniquement au développement ; le code de production utilise
-des fonctions JavaScript standard.
+La configuration autonome du SDK épingle sa propre version du cœur, publiée
+(`0.2.0-alpha.0` au 19 octobre 2026) ou, pendant la préparation d'une ligne du
+cœur, un commit immuable documenté dans la feuille de route ; dans ce dernier
+cas, le SDK ne peut être ni empaqueté ni publié. Deno sert uniquement au
+développement ; le code de production utilise des fonctions JavaScript standard.
 
 L'adaptateur de référence `createMemoryDocument` expose `read`, `commit` et
 `replaceRuns`. Il accepte uniquement les lots originaux du module, revalide le
@@ -86,15 +89,15 @@ Ces révisions sont opaques et propres à la durée de vie d'une instance. Cette
 référence ne modélise ni les styles natifs, ni la sélection, ni l'historique
 d'annulation, ni la coordination entre processus.
 
-Les points d'entrée expérimentaux `mod.ts` et `google-docs.ts` séparent
-respectivement le contrat neutre et l'intégration Google Docs. Cette dernière
-couvre désormais l'extraction, la prévisualisation, la restauration limitée des
-styles, le transport conditionnel, la revue explicite et l'adaptateur REST.
+Les points d'entrée `mod.ts` (`.`) et `google-docs.ts` (`./google-docs`)
+séparent respectivement le contrat neutre et l'intégration Google Docs. Cette
+dernière couvre l'extraction, la prévisualisation, la restauration limitée des
+styles, le transport conditionnel, la revue explicite et l'adaptateur REST ; sa
+validation réelle est bornée aux scénarios consignés dans
+[`google-docs-live-validation.md`](google-docs-live-validation.md). Les deux
+points d'entrée restent en version alpha.
 
-Le SDK est intégré aux builds et contrôles JSR/npm sous la version indépendante
-`0.1.0-alpha.0`. Aucun paquet n'est publié par cette PR d'activation.
-
-La [proposition de paquetage](./editor-sdk-packaging-v0.1.md) retient un paquet
+La [décision de paquetage](./editor-sdk-packaging-v0.1.md) retient un paquet
 `@orthotypography/editor-sdk` indépendant du groupe de versions Astro, avec les
 exports `.` et `./google-docs`. Un workflow distinct applique son propre tag de
 release et sa reprise partielle sans modifier les versions des adaptateurs.
