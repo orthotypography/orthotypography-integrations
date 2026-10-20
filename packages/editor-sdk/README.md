@@ -24,7 +24,7 @@ npm install @orthotypography/editor-sdk
 With Deno or another JSR client:
 
 ```sh
-deno add jsr:@orthotypography/editor-sdk@0.2.0-alpha.0
+deno add jsr:@orthotypography/editor-sdk@0.3.0-alpha.0
 ```
 
 ## Prepare and validate

@@ -5,8 +5,9 @@
 `0.2.0-alpha.0`, depuis le commit
 [`233cef6`](https://github.com/orthotypography/orthotypography-integrations/commit/233cef63a56110465d26610798d6f6f99ce2f1d1)
 (§ « Publication du 19 octobre »). Depuis le 20 octobre, `main` ne contient plus
-le point d'entrée `./google-docs` du SDK ; ce retrait n'est pas publié. Les
-tâches ci-dessous sont proposées, sans engagement de date.
+le point d'entrée `./google-docs` du SDK ; ce retrait est préparé en
+`0.3.0-alpha.0`, non publié. Les tâches ci-dessous sont proposées, sans
+engagement de date.
 
 ## État acquis
 
@@ -16,7 +17,7 @@ tâches ci-dessous sont proposées, sans engagement de date.
 | Dépendance des adaptateurs | Cœur publié `0.2.0-alpha.0`                                                                                                                                                                                                                                      | [Configuration](../deno.json), `deno task core:status`                                                                                                                                |
 | SDK neutre                 | `@orthotypography/editor-sdk@0.2.0-alpha.0` publié ; passe `review` unique, groupes de propositions, acceptation par groupes entiers, propositions écartées ; plans immuables, validation complète, adaptateur atomique en mémoire                               | [Release SDK](https://github.com/orthotypography/orthotypography-integrations/releases/tag/editor-sdk-v0.2.0-alpha.0), [README SDK](../packages/editor-sdk/README.md)                 |
 | Dépendance du SDK          | Cœur publié `0.2.0-alpha.0`                                                                                                                                                                                                                                      | [Manifeste SDK](../packages/editor-sdk/deno.json), `deno task core:status`                                                                                                            |
-| Point d'entrée Google Docs | Livré dans `@orthotypography/editor-sdk` jusqu'à `0.2.0-alpha.0` ; retiré de `main` le 20 octobre, retrait non publié. L'adaptateur Google Docs est développé hors de ce dépôt                                                                                   | [CHANGELOG](../CHANGELOG.md), [manifeste SDK](../packages/editor-sdk/deno.json)                                                                                                       |
+| Point d'entrée Google Docs | Livré dans `@orthotypography/editor-sdk` jusqu'à `0.2.0-alpha.0` ; retiré de `main` le 20 octobre ; retrait préparé en `0.3.0-alpha.0`, non publié. L'adaptateur Google Docs est développé hors de ce dépôt                                                      | [CHANGELOG](../CHANGELOG.md), [manifeste SDK](../packages/editor-sdk/deno.json)                                                                                                       |
 | Tests SDK                  | 33 tests hors ligne au 20 octobre, sur le cœur `0.2.0-alpha.0` : passe `review`, groupes, acceptation partielle, corrections écartées, adaptateur en mémoire, point d'entrée unique                                                                              | Tests du SDK, CI                                                                                                                                                                      |
 | Validation réelle          | Le point d'entrée Google Docs a été validé en réel le 6 septembre (connecteur Google Drive, cœur `0.1.0-alpha.2`) et le 19 octobre (transport REST, cœur `ae78ecd`) ; ces validations portaient sur le SDK et ce point d'entrée ensemble, à leur version d'alors | [Compte rendu au commit `cabfce0`](https://github.com/orthotypography/orthotypography-integrations/blob/cabfce09e9f7db0359d69d7a24b019b9c3deafce/docs/google-docs-live-validation.md) |
 
@@ -92,9 +93,10 @@ chaque version sur JSR et npm et du tag npm attendu.
 
 ## Prochaines tâches proposées
 
-1. **Publier le retrait de `./google-docs`.** Le retrait est un changement
-   cassant du SDK, consigné dans le [CHANGELOG](../CHANGELOG.md) ; il sera
-   publié avec la prochaine version du SDK, sur instruction explicite.
+1. **Publier le SDK `0.3.0-alpha.0`.** Cette version, préparée sans modifier les
+   adaptateurs, ne contient que le retrait cassant de `./google-docs` consigné
+   dans le [CHANGELOG](../CHANGELOG.md). Publier sur instruction explicite, puis
+   mettre à jour cette feuille avec les preuves de publication.
 2. **Application cliente de référence.** Définir puis réaliser un parcours
    limité d'affichage des diagnostics, des groupes et de leurs indications
    `suggested`, acceptation de groupes entiers ou abandon, conservation et mise
